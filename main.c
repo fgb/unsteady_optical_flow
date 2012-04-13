@@ -39,53 +39,64 @@
  *
  */
 
-//#include "p33Fxxxx.h"
 #include "init_default.h"
 #include "init.h"
-#include "battery.h"
 //#include "interrupts.h"
 #include "cmd.h"
 #include "ports.h"
-#include "led.h"
-#include "utils.h"
 #include "timer.h"
 
-#include "dfmem.h"
-#include "ovcam.h"
-#include "stopwatch.h"
-#include "gyro.h"
-
-#include "motor_ctrl.h"
-
-#include "radio.h"
+// Various objects
 #include "payload.h"
 
+// Modules
+#include "stopwatch.h"
+#include "radio.h"
+#include "led.h"
+#include "utils.h"
+#include "battery.h"
+#include "spi_controller.h"
+#include "packet_pool.h"
+
+// Devices
+#include "gyro.h"
+#include "dfmem_dma.h"
+#include "ovcam.h"
+#include "xl.h"
+#include "motor_ctrl.h"
+#include "camera.h"
 
 int main(void) {
-
-    /* Initialization */
-    SetupClock();
-    SetupPorts();
-    batSetup();
-    //SetupInterrupts();
-    //SetupPWM();
-    SetupADC();
-    SwitchClocks();
-
-    mcSetup();
-    swatchSetup();
-    gyroSetup();
-    dfmemSetup();
-    ovcamSetup();
-
-    radioSetup(80, 10);   // tx_queue = 200, rx_queue = 10
-    cmdSetup();
-
 
     /* Declarations */
     unsigned int i;
 
+    /* Initialization */    
+    SetupClock();
+    SwitchClocks();
+    SetupPorts();
+    batSetup();
+    SetupADC();
+
+    spicSetup();
+    ppoolInit();
+    radioInit(40, 10);   // tx_queue = 40, rx_queue = 10
+    radioSetChannel(0x16);    
+    radioSetSrcPanID(0x1100);
+    radioSetSrcAddr(0x1102);
+
+    mcSetup();
+    swatchSetup();
     
+    gyroSetup();
+    dfmemSetup();
+    // ovcamSetup before xlSetup!
+    ovcamSetup();
+    camSetup();
+    xlSetup();
+   
+    cmdSetup();     
+        
     /* Boot-up sequence */
     for (i = 0; i < 6; i++) {
         LED_GREEN = ~LED_GREEN;
@@ -96,23 +107,18 @@ int main(void) {
         delay_ms(50);
     }
 
-    LED_GREEN = 1;
-    LED_RED = 1;
-    LED_ORANGE = 1;
-
-    delay_ms(500);
-
-    if(radioGetTrxState() == 0x16)  { 
-        LED_GREEN = 0;
-        LED_RED = 0;
-        LED_ORANGE = 0;
-    }
+    LED_GREEN = 0;
+    LED_RED = 0;
+    LED_ORANGE = 0;
 
     swatchReset();
-
+    camStart();
 
     /* Program */
     while(1) {
+
         cmdHandleRadioRxBuffer();
+        radioProcess();
+
     }    
 }

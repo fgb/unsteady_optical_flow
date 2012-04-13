@@ -4,6 +4,7 @@ import time, os, sys
 from serial import *
 from xbee import XBee
 from payload import Payload
+from struct import *
 
 class BaseStation(object):
 
@@ -18,15 +19,29 @@ class BaseStation(object):
         
         self.dest_addr = dest_addr
 
+    def setSrcAddr(self, src_addr):
+        
+        self.xb.at(command = 'MY', parameter = pack('>H', src_addr))
+        
+    def setSrcPan(self, src_pan):
+    
+        self.xb.at(command = 'ID', parameter = pack('>H', src_pan))
+
+    def setChannel(self, channel):
+    
+        self.xb.at(command = 'CH', parameter = pack('>H', channel))
+        
     def close(self):
         try:
+            self.xb.halt()
             self.ser.close()
         except SerialException:
             print "SerialException"
 
 
     def send(self, status, type, data ):
-        pld = Payload( ''.join(data), status, type )
+        #pld = Payload( ''.join(data), status, type )
+        pld = Payload(data, status, type)
         self.xb.tx(dest_addr = self.dest_addr, data = str(pld))
 
     def write(self, data):
