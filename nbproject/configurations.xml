@@ -4,20 +4,27 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <logicalFolder name="f2" displayName="lib" projectFiles="true">
+      <logicalFolder name="f1" displayName="lib" projectFiles="true">
         <itemPath>../lib/init.c</itemPath>
-        <itemPath>../lib/interrupts.c</itemPath>
       </logicalFolder>
-      <logicalFolder name="f1" displayName="shared" projectFiles="true">
+      <logicalFolder name="f2" displayName="shared" projectFiles="true">
+        <itemPath>../../shared/battery.c</itemPath>
+        <itemPath>../../shared/buffer.c</itemPath>
         <itemPath>../../shared/delay.s</itemPath>
         <itemPath>../../shared/dfmem.c</itemPath>
         <itemPath>../../shared/gyro.c</itemPath>
         <itemPath>../../shared/init_default.c</itemPath>
-        <itemPath>../../shared/ovcam.c</itemPath>
         <itemPath>../../shared/ovcamHS.s</itemPath>
+        <itemPath>../../shared/payload.c</itemPath>
+        <itemPath>../../shared/queue.c</itemPath>
+        <itemPath>../../shared/payload_queue.c</itemPath>
         <itemPath>../../shared/stopwatch.c</itemPath>
       </logicalFolder>
+      <itemPath>cmd.c</itemPath>
       <itemPath>main.c</itemPath>
+      <itemPath>motor_ctrl.c</itemPath>
+      <itemPath>radio.c</itemPath>
+      <itemPath>ovcam.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -32,9 +39,9 @@
         <developmentServer>localhost</developmentServer>
         <targetDevice>dsPIC33FJ128MC706A</targetDevice>
         <targetHeader></targetHeader>
-        <platformTool>ICD3PlatformTool</platformTool>
+        <platformTool>PICkit3PlatformTool</platformTool>
         <languageToolchain>C30</languageToolchain>
-        <languageToolchainVersion></languageToolchainVersion>
+        <languageToolchainVersion>3_30b</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -59,8 +66,8 @@
         <property key="const-model" value="default"/>
         <property key="enable-procedural-abstraction" value="false"/>
         <property key="enable-ansi-warnings" value="false"/>
-        <property key="enable-short-double" value="false"/>
-        <property key="extra-include-directories" value="../lib;../../shared"/>
+        <property key="enable-short-double" value="true"/>
+        <property key="extra-include-directories" value="./;../lib;../../shared"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="enable-unroll-loops" value="false"/>
         <property key="enable-symbols" value="true"/>
@@ -82,8 +89,8 @@
         <property key="list-source" value="false"/>
         <property key="list-assembly" value="false"/>
         <property key="relax" value="false"/>
-        <property key="extra-include-directories-for-preprocessor" value=""/>
         <property key="warning-level" value="emit-warnings"/>
+        <property key="extra-include-directories-for-preprocessor" value=""/>
         <property key="list-section-info" value="false"/>
         <property key="omit-forms" value="false"/>
         <property key="list-symbols" value="false"/>
@@ -97,7 +104,7 @@
         <property key="general-code-protect" value="no_code_protect"/>
         <property key="secure-write-protect" value="no_write_protect"/>
         <property key="warn-section-align" value="false"/>
-        <property key="heap-size" value=""/>
+        <property key="heap-size" value="12288"/>
         <property key="remove-unused-sections" value="false"/>
         <property key="stack-size" value=""/>
         <property key="linker-symbols" value=""/>
@@ -119,16 +126,23 @@
         <property key="enable-default-isr" value="true"/>
         <property key="symbol-stripping" value="keep-all"/>
         <property key="boot-ram" value="no_ram"/>
-        <property key="extra-lib-directories" value="/opt/microchip/mplabc30/v3.24/lib"/>
+        <property key="extra-lib-directories"
+                  value="../C:/Program Files/Microchip/MPLAB C30/lib"/>
         <property key="secure-eeprom" value="no_eeprom"/>
       </C30-LD>
       <C30Global>
+        <property key="fast-math" value="false"/>
+        <property key="legacy-libc" value="false"/>
       </C30Global>
-      <ICD3PlatformTool>
+      <PICkit3PlatformTool>
         <property key="UART 2" value="true"/>
         <property key="UART 1" value="true"/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
         <property key="memories.id" value="false"/>
+        <property key="ToolFirmwareFilePath"
+                  value="Press to browse for a specific firmware version"/>
+        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
         <property key="memories.eeprom" value="false"/>
         <property key="programoptions.usehighvoltageonmclr" value="false"/>
         <property key="INPUT CAPTURE 8" value="true"/>
@@ -140,11 +154,12 @@
         <property key="INPUT CAPTURE 3" value="true"/>
         <property key="INPUT CAPTURE 2" value="true"/>
         <property key="INPUT CAPTURE 1" value="true"/>
+        <property key="programoptions.preserveeeprom" value="false"/>
         <property key="ADC 2" value="true"/>
         <property key="ADC 1" value="true"/>
         <property key="OUTPUT COMPARE 8" value="true"/>
         <property key="OUTPUT COMPARE 7" value="true"/>
-        <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="OUTPUT COMPARE 6" value="true"/>
         <property key="OUTPUT COMPARE 5" value="true"/>
         <property key="OUTPUT COMPARE 4" value="true"/>
@@ -152,8 +167,10 @@
         <property key="OUTPUT COMPARE 3" value="true"/>
         <property key="OUTPUT COMPARE 2" value="true"/>
         <property key="OUTPUT COMPARE 1" value="true"/>
-        <property key="poweroptions.powerenable" value="false"/>
+        <property key="poweroptions.powerenable" value="true"/>
         <property key="memories.programmemory.start" value="0x0"/>
+        <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x0"/>
         <property key="PWM" value="true"/>
         <property key="AutoSelectMemRanges" value="auto"/>
         <property key="TIMER9" value="true"/>
@@ -161,18 +178,20 @@
         <property key="TIMER8" value="true"/>
         <property key="TIMER7" value="true"/>
         <property key="TIMER6" value="true"/>
-        <property key="TIMER5" value="true"/>
         <property key="memories.programmemory.end" value="0x157ff"/>
+        <property key="TIMER5" value="true"/>
         <property key="TIMER4" value="true"/>
-        <property key="TIMER3" value="true"/>
         <property key="SPI 2" value="true"/>
-        <property key="TIMER2" value="true"/>
+        <property key="TIMER3" value="true"/>
         <property key="SPI 1" value="true"/>
+        <property key="TIMER2" value="true"/>
         <property key="TIMER1" value="true"/>
+        <property key="programmertogo.imagename" value=""/>
         <property key="I2C2" value="true"/>
         <property key="I2C1" value="true"/>
         <property key="Freeze All Other Peripherals" value="true"/>
-      </ICD3PlatformTool>
+        <property key="programoptions.preserveprogramrange.end" value="0xff"/>
+      </PICkit3PlatformTool>
     </conf>
   </confs>
 </configurationDescriptor>
