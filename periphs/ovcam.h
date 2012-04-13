@@ -1,9 +1,8 @@
-/*********************************
-* Name: ovcam.h
-* Desc: Header for OV7660 Camera
-* Date: 2007-9-10
-* Author: fgb
-*********************************/
+/*
+ * Header for OV7660 Camera
+ *
+ * Created on 2007-9-10 by fgb
+ */
 
 #include "p33Fxxxx.h"
 

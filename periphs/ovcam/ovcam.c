@@ -1,19 +1,16 @@
-/*********************************************
-* Name: ovcam.c
-* Desc: SCCB Communication with OV7660 (I2C)
-* Date: 2007-9-10
-* Author: fgb
-*********************************************/
+/*
+ * SCCB Communication with OV7660 (I2C)
+ *
+ * Created on 2007-9-10 by fgb
+ */
 
-#include "ovcam.h"
-#include "i2c.h"
-#include "delay.h"
+#include "init.h"
 
 void SCCB_SetupOV7660(void)
 {
     // SCCB Register Reset
     SCCB_Write(COM7,0x80);
-    delay_us(5000);
+    Delay_us(5000);
 
     // Pixel Clock, Banding Filter, Exposure, Gain
     SCCB_Write(CLKRC,0x81); // PCLK = (XCLK/2)/2
@@ -31,7 +28,7 @@ void SCCB_SetupOV7660(void)
 
     // Format
     SCCB_Write(COM7,0x10); // QVGA & YUV
-    SCCB_Write(COM1,0x24); // QQVGA + HREF skip 3/4 rows (every other in QQVGA)
+    SCCB_Write(COM1,0x24); // QQVGA + HREF skip every other row (needed for QQVGA)
     SCCB_Write(COM3,0x02); // Horizontal no pixel average + VarioPixel Off (extra)
     SCCB_Write(HSTOP,0x4B);
     SCCB_Write(HSTART,0x23);

@@ -1,9 +1,8 @@
-/*****************************************************************
-* Name: dfmem.c
-* Desc: SPI Communication with DataFlash Memory (528 bytes/page)
-* Date: 2008-7-23
-* Author: fgb
-*****************************************************************/
+/*
+ * SPI Communication with DataFlash Memory (528 bytes/page)
+ *
+ * Created on 2008-7-23 by fgb
+ */
 
 #include "spi.h"
 #include "dfmem.h"

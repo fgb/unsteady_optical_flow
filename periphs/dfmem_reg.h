@@ -1,9 +1,8 @@
-/********************************************
-* Name: dfmem_reg.h
-* Desc: Header for Atmel DataFlash Registers
-* Date: 2008-8-25
-* Author: fgb
-********************************************/
+/*
+ * Header for Atmel DataFlash Registers
+ *
+ * Created on 2008-8-25 by fgb
+ */
 
 // DataFlash Status Register Definition
 volatile unsigned int  DFSTATUS;

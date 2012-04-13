@@ -1,9 +1,13 @@
-/*********************************
-* Name: dfmem.h
-* Desc: Header for Atmel DataFlash
-* Date: 2008-7-23
-* Author: fgb
-*********************************/
+/*
+ * Header for Atmel DataFlash
+ *
+ * Created on 2008-7-23 by fgb
+ */
+
+// From SetupPorts.h
+// dfmem: SPI2 Slave Select is an output
+//LATG  = 0b0000000000;
+//TRISG = 0b0111111111;
 
 #include "p33Fxxxx.h"
 
