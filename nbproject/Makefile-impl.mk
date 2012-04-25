@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=UnsteadyOpticalFlowS
+PROJECTNAME=unsteady-optical-flow
 
 # Active Configuration
 DEFAULTCONF=default
