@@ -56,15 +56,15 @@
 #include "utils.h"
 #include "battery.h"
 #include "spi_controller.h"
-#include "packet_pool.h"
+#include "ppool.h"
 
 // Devices
 #include "gyro.h"
-#include "dfmem_dma.h"
+#include "dfmem.h"
 #include "ovcam.h"
 #include "xl.h"
 #include "motor_ctrl.h"
-#include "camera.h"
+#include "cam.h"
 
 int main(void) {
 

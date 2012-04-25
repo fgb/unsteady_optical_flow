@@ -4,35 +4,31 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <logicalFolder name="f2" displayName="hhu/C-lib" projectFiles="true">
-        <itemPath>../../hhu/C-lib/at86rf231_driver.c</itemPath>
-        <itemPath>../../hhu/C-lib/mac_packet.c</itemPath>
-        <itemPath>../../hhu/C-lib/motor_ctrl.c</itemPath>
-        <itemPath>../../hhu/C-lib/ovcam.c</itemPath>
-        <itemPath>../../hhu/C-lib/fast_queue.c</itemPath>
-        <itemPath>../../hhu/C-lib/packet_pool.c</itemPath>
-        <itemPath>../../hhu/C-lib/radio.c</itemPath>
-      </logicalFolder>
-      <logicalFolder name="f3" displayName="lib" projectFiles="true">
-        <itemPath>../lib/init.c</itemPath>
-      </logicalFolder>
-      <logicalFolder name="f1" displayName="shared" projectFiles="true">
-        <itemPath>../../shared/battery.c</itemPath>
-        <itemPath>../../shared/counter.c</itemPath>
-        <itemPath>../../shared/gyro.c</itemPath>
-        <itemPath>../../shared/init_default.c</itemPath>
-        <itemPath>../../shared/ovcamHS.s</itemPath>
-        <itemPath>../../shared/queue.c</itemPath>
-        <itemPath>../../shared/spi_controller.c</itemPath>
-        <itemPath>../../shared/stopwatch.c</itemPath>
-        <itemPath>../../shared/xl.c</itemPath>
-        <itemPath>../../shared/camera.c</itemPath>
-        <itemPath>../../shared/payload.c</itemPath>
-        <itemPath>../../shared/delay.s</itemPath>
-        <itemPath>../../shared/dfmem.c</itemPath>
+      <logicalFolder name="f1" displayName="imageproc-lib" projectFiles="true">
+        <itemPath>../imageproc-lib/battery.c</itemPath>
+        <itemPath>../imageproc-lib/counter.c</itemPath>
+        <itemPath>../imageproc-lib/init_default.c</itemPath>
+        <itemPath>../imageproc-lib/gyro.c</itemPath>
+        <itemPath>../imageproc-lib/ovcam.c</itemPath>
+        <itemPath>../imageproc-lib/ovcamHS.s</itemPath>
+        <itemPath>../imageproc-lib/at86rf231_driver.c</itemPath>
+        <itemPath>../imageproc-lib/mac_packet.c</itemPath>
+        <itemPath>../imageproc-lib/init.c</itemPath>
+        <itemPath>../imageproc-lib/ppool.c</itemPath>
+        <itemPath>../imageproc-lib/radio.c</itemPath>
+        <itemPath>../imageproc-lib/cam.c</itemPath>
+        <itemPath>../imageproc-lib/delay.s</itemPath>
+        <itemPath>../imageproc-lib/dfmem.c</itemPath>
+        <itemPath>../imageproc-lib/payload.c</itemPath>
+        <itemPath>../imageproc-lib/spi_controller.c</itemPath>
+        <itemPath>../imageproc-lib/stopwatch.c</itemPath>
+        <itemPath>../imageproc-lib/xl.c</itemPath>
+        <itemPath>../imageproc-lib/queue.c</itemPath>
+        <itemPath>../imageproc-lib/carray.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
-      <itemPath>cmdh.c</itemPath>
+      <itemPath>cmd.c</itemPath>
+      <itemPath>motor_ctrl.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -47,9 +43,9 @@
         <developmentServer>localhost</developmentServer>
         <targetDevice>dsPIC33FJ128MC706A</targetDevice>
         <targetHeader></targetHeader>
-        <platformTool>PICkit3PlatformTool</platformTool>
+        <platformTool>RealICEPlatformTool</platformTool>
         <languageToolchain>C30</languageToolchain>
-        <languageToolchainVersion>3_30b</languageToolchainVersion>
+        <languageToolchainVersion></languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -69,14 +65,13 @@
       </makeCustomizationType>
       <C30>
         <property key="optimization-level" value="0"/>
-        <property key="preprocessor-macros" value="__IMAGEPROC2;__DFMEM_8MBIT"/>
+        <property key="preprocessor-macros" value="__IMAGEPROC2;__DFMEM_32MBIT"/>
         <property key="code-model" value="default"/>
         <property key="const-model" value="default"/>
         <property key="enable-procedural-abstraction" value="false"/>
         <property key="enable-ansi-warnings" value="false"/>
         <property key="enable-short-double" value="false"/>
-        <property key="extra-include-directories"
-                  value=".\;..\lib;..\..\hhu\C-lib\;..\..\shared"/>
+        <property key="extra-include-directories" value=".\;..\imageproc-lib\"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="enable-unroll-loops" value="false"/>
         <property key="enable-symbols" value="true"/>
@@ -91,6 +86,22 @@
         <property key="scalar-model" value="default"/>
       </C30>
       <C30-AS>
+        <property key="omit-debug-dirs" value="false"/>
+        <property key="extra-include-directories-for-assembler" value=""/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="list-file" value=""/>
+        <property key="list-assembly" value="false"/>
+        <property key="list-source" value="false"/>
+        <property key="relax" value="false"/>
+        <property key="extra-include-directories-for-preprocessor" value=""/>
+        <property key="warning-level" value="emit-warnings"/>
+        <property key="list-section-info" value="false"/>
+        <property key="omit-forms" value="false"/>
+        <property key="list-symbols" value="false"/>
+        <property key="keep-locals" value="false"/>
+        <property key="false-conditionals" value="false"/>
+        <property key="expand-macros" value="false"/>
+        <property key="assembler-symbols" value=""/>
       </C30-AS>
       <C30-LD>
         <property key="preprocessor-macros" value=""/>
@@ -109,23 +120,23 @@
         <property key="enable-handles" value="true"/>
         <property key="enable-data-init" value="true"/>
         <property key="secure-flash" value="no_flash"/>
-        <property key="generate-cross-reference-file" value="false"/>
-        <property key="report-memory-usage" value="false"/>
-        <property key="boot-flash" value="no_flash"/>
         <property key="boot-write-protect" value="no_write_protect"/>
+        <property key="boot-flash" value="no_flash"/>
+        <property key="report-memory-usage" value="false"/>
+        <property key="generate-cross-reference-file" value="false"/>
         <property key="input-libraries" value=""/>
         <property key="secure-ram" value="no_ram"/>
         <property key="enable-check-sections" value="false"/>
         <property key="enable-default-isr" value="true"/>
         <property key="symbol-stripping" value=""/>
         <property key="boot-ram" value="no_ram"/>
-        <property key="extra-lib-directories" value=""/>
         <property key="secure-eeprom" value="no_eeprom"/>
+        <property key="extra-lib-directories" value=""/>
       </C30-LD>
       <C30Global>
         <property key="fast-math" value="true"/>
-        <property key="legacy-libc" value="false"/>
         <property key="output-file-format" value="elf"/>
+        <property key="legacy-libc" value="false"/>
       </C30Global>
       <PICkit3PlatformTool>
         <property key="UART 2" value="true"/>
@@ -135,8 +146,8 @@
         <property key="memories.id" value="false"/>
         <property key="ToolFirmwareFilePath"
                   value="Press to browse for a specific firmware version"/>
-        <property key="memories.eeprom" value="false"/>
         <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
+        <property key="memories.eeprom" value="false"/>
         <property key="programoptions.usehighvoltageonmclr" value="false"/>
         <property key="INPUT CAPTURE 8" value="true"/>
         <property key="INPUT CAPTURE 7" value="true"/>
@@ -162,28 +173,28 @@
         <property key="OUTPUT COMPARE 1" value="true"/>
         <property key="poweroptions.powerenable" value="true"/>
         <property key="memories.programmemory.start" value="0x0"/>
-        <property key="programoptions.preserveprogramrange.start" value="0x0"/>
         <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x0"/>
         <property key="PWM" value="true"/>
         <property key="AutoSelectMemRanges" value="auto"/>
         <property key="TIMER9" value="true"/>
-        <property key="TIMER8" value="true"/>
         <property key="voltagevalue" value="3.25"/>
+        <property key="TIMER8" value="true"/>
         <property key="TIMER7" value="true"/>
         <property key="TIMER6" value="true"/>
-        <property key="TIMER5" value="true"/>
         <property key="memories.programmemory.end" value="0x157ff"/>
+        <property key="TIMER5" value="true"/>
         <property key="TIMER4" value="true"/>
-        <property key="TIMER3" value="true"/>
         <property key="SPI 2" value="true"/>
-        <property key="TIMER2" value="true"/>
+        <property key="TIMER3" value="true"/>
         <property key="SPI 1" value="true"/>
+        <property key="TIMER2" value="true"/>
         <property key="TIMER1" value="true"/>
         <property key="programmertogo.imagename" value=""/>
         <property key="I2C2" value="true"/>
         <property key="I2C1" value="true"/>
-        <property key="programoptions.preserveprogramrange.end" value="0xff"/>
         <property key="Freeze All Other Peripherals" value="true"/>
+        <property key="programoptions.preserveprogramrange.end" value="0xff"/>
       </PICkit3PlatformTool>
     </conf>
   </confs>

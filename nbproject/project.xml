@@ -3,7 +3,7 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>UnsteadyOpticalFlowH</name>
+            <name>unsteady-optical-flow</name>
             <creation-uuid>b1b09c70-db6f-4cfa-a338-5828cad6cc77</creation-uuid>
             <make-project-type>0</make-project-type>
             <c-extensions>c</c-extensions>

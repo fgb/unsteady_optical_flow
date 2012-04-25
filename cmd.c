@@ -2,6 +2,8 @@
  * Receiving and transmitting queue handler
  *
  * created on 2011-3-8 by stanbaek, fgb
+ * modified by hhu for optical flow project
+ * for use with hhu-lib code base
  */
 
 //#include "init_default.h"
@@ -22,14 +24,14 @@
 
 #include "radio.h"
 #include "payload.h"
-
+#include "cam.h"
 #include <stdio.h>
-//#include <string.h>
-//#include <stdlib.h>
+#include <string.h>
+#include <stdlib.h>
 
 
 // Commands
-#define MAX_CMD_FUNC_SIZE           0x10
+#define MAX_CMD_FUNC_SIZE           0x11
 
 #define CMD_SET_MOTOR_SPEED         0
 #define CMD_GET_PICTURE             1
@@ -41,10 +43,13 @@
 #define CMD_RUN_GYRO_CALIB          0x0d
 #define CMD_GET_GYRO_CALIB_PARAM    0x0e
 #define CMD_ECHO                    0x0f
+#define CMD_RUN_RADIO_TEST          0x10
+
+#define BASESTATION_ADDR            0x1020
 
 /* Declarations */
 #define IM_COLS                     160
-#define IM_ROWS                     100
+#define IM_ROWS                     120
 #define IM_ROWS_START               0
 #define IM_ROWS_QUANT               1
 #define VID_ROWS                    13
@@ -54,14 +59,24 @@
 #define MEM_PAGESIZE                528
 
 #define MEM_DATAPOINT_SIZE          176
-union {
-    struct {
-        unsigned int  sample;
-        unsigned long timestamp;
-        unsigned int  bemf;
-        unsigned char gyro[3*sizeof(int)];        
-        unsigned char vsync[2];        
-        unsigned char rows[IM_ROWS_QUANT][IM_COLS];
+
+/* A datapoint is saved upon completion of a camera row capture. It contains:
+ *      sample - The datapoint number (starting from 0)
+ *      timestamp - The system time in milliseconds corresponding to row capture completion
+ *      bemf - The main motor back EMF reading
+ *      gyro - Raw gyro values
+ *      row_num - Physical row number (0 to IM_ROWS)
+ *      row - Serialized captured row data
+ */
+ union {
+    struct {                                    // Total: 176
+        unsigned int  sample;                   // (2)
+        unsigned int  bemf;                     // (2)
+        unsigned char gyro[3*sizeof(int)];      // 2*3 = (6)
+        unsigned int  gyro_timestamp;           // (2)
+        unsigned int  row_num;                  // (2)
+        unsigned int  row_timestamp;            // (2)
+        unsigned char row[IM_COLS];             // IM_COLS = (160)
     };
     unsigned char contents[MEM_DATAPOINT_SIZE];
 } data;
@@ -92,7 +107,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
 static void cmdGetMemContents(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdRunGyroCalib(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, unsigned char *frame);
-
+static void cmdRunRadioTest(unsigned char status, unsigned char length, unsigned char *frame);
 
 /*-----------------------------------------------------------------------------
  *          Public functions
@@ -112,21 +127,27 @@ void cmdSetup(void) {
     cmd_func[CMD_GET_MEM_CONTENTS] = &cmdGetMemContents;
     cmd_func[CMD_RUN_GYRO_CALIB] = &cmdRunGyroCalib;
     cmd_func[CMD_GET_GYRO_CALIB_PARAM] = &cmdGetGyroCalibParam;
+    cmd_func[CMD_RUN_RADIO_TEST] = &cmdRunRadioTest;
 }
 
 void cmdHandleRadioRxBuffer(void) {
 
+    MacPacket packet;
     Payload pld;
     unsigned char command, status;  
 
-    if ((pld = radioGetRxPayload()) != NULL) {
+    if ((packet = radioDequeueRxPacket()) != NULL) {
+        pld = macGetPayload(packet);
         status = payGetStatus(pld);
         command = payGetType(pld);      
-        cmd_func[command](status, payGetDataLength(pld), payGetData(pld));
-        payDelete(pld);
+        if(command < MAX_CMD_FUNC_SIZE) {
+            cmd_func[command](status, payGetDataLength(pld), payGetData(pld));
+        }
+        radioReturnMacPacket(packet);
     } 
 
     return;
+    
 }
 
 
@@ -160,21 +181,11 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigne
 static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsigned char *frame) {
 
     unsigned int samples = frame[0] + (frame[1] << 8), count = samples;
-    unsigned long next_sample_time = 0;
+    unsigned long next_sample_time = 0; 
     
     unsigned int mem_byte = 0;
     unsigned int mem_page = 0x080, max_page = mem_page + samples/3 + 0x80, sector = mem_page;
     static unsigned char buf_index = 1;
-
-    //// Send back image resolution
-    //while(U2STAbits.UTXBF);
-    //U2TXREG = IM_COLS;
-    //while(U2STAbits.UTXBF);
-    //U2TXREG = IM_ROWS_QUANT;
-    //while(U2STAbits.UTXBF);
-    //U2TXREG = sizeof(data.gyro);
-    //while(U2STAbits.UTXBF);
-    //U2TXREG = sizeof(data.timestamp);
 
     // Erase as many memory sectors as needed
     // TODO (fgb) : fix to adapt to any number of samples, not only multiples of 3
@@ -186,23 +197,50 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
     LED_RED = 0;
 
     // Reset and start stopwatch
-    swatchReset();
-    swatchTic();
+    // swatchReset();
+    // swatchTic();
 
     // Dump sensor data to memory
     LED_ORANGE = 1;
+    
+    CamRow row_buff;
+    
+    next_sample_time = swatchToc();
     do {
+        
         if (swatchToc() > next_sample_time) {
 
             // Capture sensor datapoint
-            data.vsync[0] = OVCAM_VSYNC;
-            ovcamGetRow(data.rows);
-            data.vsync[1] = OVCAM_VSYNC;
-            data.timestamp = swatchToc();
-            data.bemf = ADC1BUF0;
-            gyroGetXYZ(data.gyro);
-            data.sample = samples - count;
+            // OLD CODE
+            //data.vsync[0] = OVCAM_VSYNC;
+            //ovcamGetRow(data.rows);
+            //data.vsync[1] = OVCAM_VSYNC;
+            //data.timestamp = swatchToc();
+            //data.bemf = ADC1BUF0;
+            //gyroGetXYZ(data.gyro);
+            //data.sample = samples - count;
 
+            // NEW CODE
+            data.sample = samples - count;
+            
+            // Check if a row is available
+            // If no new row is available, clear respective fields
+            if(camHasNewRow()) {
+                row_buff = camGetRow();
+                memcpy(data.row, row_buff->pixels, IM_COLS); 
+                data.row_num = row_buff->row_num;
+                data.row_timestamp = (unsigned int) (row_buff->timestamp & 0x00FF);
+            } else {
+                memset(data.row, 0, IM_COLS);
+                data.row_timestamp = 0;
+            }
+            
+            // Read gyro values
+            gyroGetXYZ(data.gyro);
+            data.gyro_timestamp = (unsigned int) (swatchToc() & 0x00FF);
+            data.bemf = ADC1BUF0;
+            
+            
             // Send datapoint to memory buffer
             dfmemWriteBuffer(data.contents, MEM_DATAPOINT_SIZE, mem_byte, buf_index);
             mem_byte += MEM_DATAPOINT_SIZE;
@@ -217,7 +255,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             // Stop motor while still sampling, to capture final glide/crash            
             if (count == samples/2) { mcSetDutyCycle(MC_CHANNEL_PWM1, 0); }
 
-            next_sample_time = data.timestamp + 1000;
+            next_sample_time = next_sample_time + 1000;
             //delay_ms(2);
             count--;
         }
@@ -230,7 +268,7 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
     unsigned int start_page = frame[0] + (frame[1] << 8);
     unsigned int end_page = frame[2] + (frame[3] << 8);
     unsigned int tx_data_size = frame[4] + (frame[5] << 8);
-    unsigned int i, j;
+    unsigned int page, j;
     unsigned char count = 0;
 
     //// Send back memory details
@@ -243,30 +281,38 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
     mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
     Payload pld;
+    MacPacket packet;
 
     LED_ORANGE = 0;
     LED_GREEN = 1; // Signal start of transfer
     LED_RED = 0;
 
     // Send back memory contents
-    for (i = start_page; i < end_page; ++i) {
+    for (page = start_page; page < end_page; ++page) {
         j = 0;
         while (j + tx_data_size <= 528) {
-            pld = payCreateEmpty(tx_data_size);  
-            dfmemRead(i, j, tx_data_size, payGetData(pld));
+            packet = radioRequestMacPacket(tx_data_size);
+            if(packet == NULL) {
+                continue;
+            }
+            macSetDestAddr(packet, BASESTATION_ADDR);
+            macSetDestPan(packet, 0x1001);
+            pld = macGetPayload(packet);
+            dfmemRead(page, j, tx_data_size, payGetData(pld));
             paySetStatus(pld, count++);
             paySetType(pld, CMD_GET_MEM_CONTENTS);
-            while(radioIsTxQueueFull());
-            radioSendPayload(pld);
+            while(!radioEnqueueTxPacket(packet)) {
+                radioProcess();
+            }
             j += tx_data_size;
         }
 
-        if ((i >> 7) & 0x1) {
+        if ((page >> 7) & 0x1) {
             LED_ORANGE = ~LED_ORANGE;
             LED_GREEN = ~LED_GREEN;
         }
 
-        //delay_ms(25);
+        delay_ms(20);
     }
 
     // Signal end of transfer
@@ -288,15 +334,70 @@ static void cmdRunGyroCalib(unsigned char status, unsigned char length, unsigned
 }
 
 static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, unsigned char *frame) {
-    radioSendPayload(payCreate(12, gyroGetCalibParam(), 0, CMD_GET_GYRO_CALIB_PARAM));
+    Payload pld;
+    MacPacket packet;
+
+    packet = radioRequestMacPacket(12);
+    if(packet == NULL) { return; }
+    macSetDestAddr(packet, BASESTATION_ADDR);
+    macSetDestPan(packet, 0x1001);
+    
+    pld = macGetPayload(packet);
+    paySetData(pld, 12, gyroGetCalibParam());
+    paySetType(pld, CMD_GET_GYRO_CALIB_PARAM);
+    paySetStatus(pld, 0);
+
+    while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
 }
 
+static void cmdRunRadioTest(unsigned char status, unsigned char length, unsigned char *frame) {
+
+    MacPacket packet;
+    Payload pld;
+    unsigned int i, num_runs, size;
+
+    num_runs = *((unsigned int*) frame);
+    size = *((unsigned int*) frame + 1);
+    i = 0;
+    while(i < num_runs) {
+
+        radioProcess();
+        packet = radioRequestMacPacket(size);
+        if(packet == NULL) { continue; }
+
+        macSetDestAddr(packet, BASESTATION_ADDR);
+        macSetDestPan(packet, 0x1001);
+        i++;
+
+        pld = macGetPayload(packet);
+        paySetType(pld, 0x10);
+        paySetData(pld, 2, (unsigned char*)&i);
+        while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
+
+    }
+
+}
 
 /*-----------------------------------------------------------------------------
  *          AUX functions
 -----------------------------------------------------------------------------*/
 static void cmdEcho(unsigned char status, unsigned char length, unsigned char *frame) {
-    radioSendPayload(payCreate(length, frame, status, CMD_ECHO));
+    
+    MacPacket packet;
+    Payload pld;
+
+    packet = radioRequestMacPacket(length);
+    if(packet == NULL) { return; }
+    macSetDestAddr(packet, BASESTATION_ADDR);
+    macSetDestPan(packet, 0x1001);
+    
+    pld = macGetPayload(packet);
+    paySetData(pld, length, frame);
+    paySetType(pld, CMD_ECHO);
+    paySetStatus(pld, status);
+
+    while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
+    
 }
 
 static void cmdNop(unsigned char status, unsigned char length, unsigned char *frame) {
