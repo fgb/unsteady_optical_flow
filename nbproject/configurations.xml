@@ -4,18 +4,16 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <logicalFolder name="f2" displayName="lib" projectFiles="true">
-        <itemPath>../lib/init.c</itemPath>
-        <itemPath>../lib/interrupts.c</itemPath>
-      </logicalFolder>
-      <logicalFolder name="f1" displayName="shared" projectFiles="true">
-        <itemPath>../../shared/delay.s</itemPath>
-        <itemPath>../../shared/dfmem.c</itemPath>
-        <itemPath>../../shared/gyro.c</itemPath>
-        <itemPath>../../shared/init_default.c</itemPath>
-        <itemPath>../../shared/ovcam.c</itemPath>
-        <itemPath>../../shared/ovcamHS.s</itemPath>
-        <itemPath>../../shared/stopwatch.c</itemPath>
+      <logicalFolder name="f1" displayName="imageproc-lib" projectFiles="true">
+        <itemPath>../imageproc-lib/delay.s</itemPath>
+        <itemPath>../imageproc-lib/dfmem.c</itemPath>
+        <itemPath>../imageproc-lib/gyro.c</itemPath>
+        <itemPath>../imageproc-lib/init.c</itemPath>
+        <itemPath>../imageproc-lib/init_default.c</itemPath>
+        <itemPath>../imageproc-lib/interrupts.c</itemPath>
+        <itemPath>../imageproc-lib/ovcam.c</itemPath>
+        <itemPath>../imageproc-lib/ovcamHS.s</itemPath>
+        <itemPath>../imageproc-lib/stopwatch.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
     </logicalFolder>
@@ -60,7 +58,7 @@
         <property key="enable-procedural-abstraction" value="false"/>
         <property key="enable-ansi-warnings" value="false"/>
         <property key="enable-short-double" value="false"/>
-        <property key="extra-include-directories" value="../lib;../../shared"/>
+        <property key="extra-include-directories" value="../imageproc-lib"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="enable-unroll-loops" value="false"/>
         <property key="enable-symbols" value="true"/>
@@ -82,8 +80,8 @@
         <property key="list-source" value="false"/>
         <property key="list-assembly" value="false"/>
         <property key="relax" value="false"/>
-        <property key="extra-include-directories-for-preprocessor" value=""/>
         <property key="warning-level" value="emit-warnings"/>
+        <property key="extra-include-directories-for-preprocessor" value=""/>
         <property key="list-section-info" value="false"/>
         <property key="omit-forms" value="false"/>
         <property key="list-symbols" value="false"/>
@@ -109,18 +107,18 @@
         <property key="enable-handles" value="true"/>
         <property key="enable-data-init" value="true"/>
         <property key="secure-flash" value="no_flash"/>
-        <property key="generate-cross-reference-file" value="false"/>
-        <property key="report-memory-usage" value="true"/>
-        <property key="boot-flash" value="no_flash"/>
         <property key="boot-write-protect" value="no_write_protect"/>
+        <property key="boot-flash" value="no_flash"/>
+        <property key="report-memory-usage" value="true"/>
+        <property key="generate-cross-reference-file" value="false"/>
         <property key="input-libraries" value=""/>
         <property key="secure-ram" value="no_ram"/>
         <property key="enable-check-sections" value="true"/>
         <property key="enable-default-isr" value="true"/>
         <property key="symbol-stripping" value="keep-all"/>
         <property key="boot-ram" value="no_ram"/>
-        <property key="extra-lib-directories" value="/opt/microchip/mplabc30/v3.24/lib"/>
         <property key="secure-eeprom" value="no_eeprom"/>
+        <property key="extra-lib-directories" value="/opt/microchip/mplabc30/v3.24/lib"/>
       </C30-LD>
       <C30Global>
       </C30Global>
@@ -161,13 +159,13 @@
         <property key="TIMER8" value="true"/>
         <property key="TIMER7" value="true"/>
         <property key="TIMER6" value="true"/>
-        <property key="TIMER5" value="true"/>
         <property key="memories.programmemory.end" value="0x157ff"/>
+        <property key="TIMER5" value="true"/>
         <property key="TIMER4" value="true"/>
-        <property key="TIMER3" value="true"/>
         <property key="SPI 2" value="true"/>
-        <property key="TIMER2" value="true"/>
+        <property key="TIMER3" value="true"/>
         <property key="SPI 1" value="true"/>
+        <property key="TIMER2" value="true"/>
         <property key="TIMER1" value="true"/>
         <property key="I2C2" value="true"/>
         <property key="I2C1" value="true"/>

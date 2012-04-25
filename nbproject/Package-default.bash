@@ -10,9 +10,9 @@ CND_CONF=default
 CND_DISTDIR=dist
 TMPDIR=build/${CND_CONF}/${IMAGE_TYPE}/tmp-packaging
 TMPDIRNAME=tmp-packaging
-OUTPUT_PATH=dist/${CND_CONF}/${IMAGE_TYPE}/UnsteadyOpticalFlow.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
-OUTPUT_BASENAME=UnsteadyOpticalFlow.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
-PACKAGE_TOP_DIR=unsteadyopticalflow/
+OUTPUT_PATH=dist/${CND_CONF}/${IMAGE_TYPE}/unsteady-optical-flow.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+OUTPUT_BASENAME=unsteady-optical-flow.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+PACKAGE_TOP_DIR=unsteady-optical-flow/
 
 # Functions
 function checkReturnCode
@@ -57,15 +57,15 @@ mkdir -p ${TMPDIR}
 
 # Copy files and create directories and links
 cd "${TOP}"
-makeDirectory ${TMPDIR}/unsteadyopticalflow/bin
+makeDirectory ${TMPDIR}/unsteady-optical-flow/bin
 copyFileToTmpDir "${OUTPUT_PATH}" "${TMPDIR}/${PACKAGE_TOP_DIR}bin/${OUTPUT_BASENAME}" 0755
 
 
 # Generate tar file
 cd "${TOP}"
-rm -f ${CND_DISTDIR}/${CND_CONF}/package/unsteadyopticalflow.tar
+rm -f ${CND_DISTDIR}/${CND_CONF}/package/unsteady-optical-flow.tar
 cd ${TMPDIR}
-tar -vcf ../../../../${CND_DISTDIR}/${CND_CONF}/package/unsteadyopticalflow.tar *
+tar -vcf ../../../../${CND_DISTDIR}/${CND_CONF}/package/unsteady-optical-flow.tar *
 checkReturnCode
 
 # Cleanup
