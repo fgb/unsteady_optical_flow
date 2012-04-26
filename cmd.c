@@ -143,8 +143,8 @@ void cmdHandleRadioRxBuffer(void) {
         if(command < MAX_CMD_FUNC_SIZE) {
             cmd_func[command](status, payGetDataLength(pld), payGetData(pld));
         }
-        radioReturnMacPacket(packet);
     } 
+        radioReturnPacket(packet);
 
     return;
     
@@ -291,7 +291,7 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
     for (page = start_page; page < end_page; ++page) {
         j = 0;
         while (j + tx_data_size <= 528) {
-            packet = radioRequestMacPacket(tx_data_size);
+            packet = radioRequestPacket(tx_data_size);
             if(packet == NULL) {
                 continue;
             }
@@ -337,7 +337,7 @@ static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, uns
     Payload pld;
     MacPacket packet;
 
-    packet = radioRequestMacPacket(12);
+    packet = radioRequestPacket(12);
     if(packet == NULL) { return; }
     macSetDestAddr(packet, BASESTATION_ADDR);
     macSetDestPan(packet, 0x1001);
@@ -362,7 +362,7 @@ static void cmdRunRadioTest(unsigned char status, unsigned char length, unsigned
     while(i < num_runs) {
 
         radioProcess();
-        packet = radioRequestMacPacket(size);
+        packet = radioRequestPacket(size);
         if(packet == NULL) { continue; }
 
         macSetDestAddr(packet, BASESTATION_ADDR);
@@ -386,7 +386,7 @@ static void cmdEcho(unsigned char status, unsigned char length, unsigned char *f
     MacPacket packet;
     Payload pld;
 
-    packet = radioRequestMacPacket(length);
+    packet = radioRequestPacket(length);
     if(packet == NULL) { return; }
     macSetDestAddr(packet, BASESTATION_ADDR);
     macSetDestPan(packet, 0x1001);
