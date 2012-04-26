@@ -32,11 +32,13 @@
 #
 # by Fernando L. Garcia Bermudez and Stanley S. Baek
 #
-# v.beta
+# v.0.3 beta
 #
 # Revisions:
-#  Fernando L. Garcia Bermudez      2010-9-11   Initial release
-#  w/Stanley S. Baek                2011-3-4    Switch to ZigBee interface
+#  Fernando L. Garcia Bermudez      2010-9-11   Initial release.
+#  w/Stanley S. Baek                2011-3-4    Switch to ZigBee interface.
+#  Humphrey Hu                      2012-2-3    Updated to newer libraries
+#                                               and slight restructuring.
 #
 # Notes:
 #  - This file is derived from xboptflow.py, by Stanley S. Baek.
