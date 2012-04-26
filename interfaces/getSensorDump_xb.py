@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2010-2011, Regents of the University of California
+# Copyright (c) 2010-2012, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,17 +51,17 @@ from ofhlib.payload import Payload
 
 #*** Constants ***#
 
-# ZigBee
-DEFAULT_SERIAL_PORT = '/dev/tty.usbserial-A700eYvL' # Overriden by argv 1
-DEFAULT_BAUD_RATE = 57600                           # Overriden by argv 2
+# XBee
+#DEFAULT_SERIAL_PORT = '/dev/tty.usbserial-A700eYvL' # Overriden by argv 1
+#DEFAULT_BAUD_RATE = 57600                           # Overriden by argv 2
 
 # Basestation
-#DEFAULT_SERIAL_PORT = '/dev/tty.usbserial-A700ePgy' # Overriden by argv 1
-#DEFAULT_BAUD_RATE = 230400                          # Overriden by argv 2
+DEFAULT_SERIAL_PORT = '/dev/tty.usbserial-A700ePgy' # Overriden by argv 1
+DEFAULT_BAUD_RATE = 230400                          # Overriden by argv 2
 
-DEST_ADDR = '\x20\x22'
-#DEST_ADDR = '\x11\x01'
-#DEST_ADDR = '\xff\xff'
+SRC_PAN   = '0x1100'
+SRC_ADDR  = '0x1101'
+DEST_ADDR = '\x11\x02'
 
 # Commands
 CMD_SET_MOTOR_SPEED      = 0
@@ -88,24 +88,26 @@ datasets = 3000 # Overriden by argv 5 (max is 0xFFFF, multiple of 3)
 
 
 #*** Variables ***#
-count     = 0
-sample    = np.zeros((datasets,1), dtype=np.uint16)
-bemf      = np.zeros((datasets,1), dtype=np.uint16)
-gyro      = np.zeros((datasets,3), dtype=np.int16)
-gyroTimestamp = np.zeros((datasets,1), dtype=np.uint16)
-rowNum = np.zeros((datasets, 1), dtype=np.uint16)
-rowTimestamp = np.zeros((datasets, 1), dtype=np.uint16)
-rows      = np.zeros((datasets,160), dtype=np.uint8)
-offset = 0
-dumpster = []
-data_received = 0
-xb = None
+count           = 0
+offset          = 0
+sample          = np.zeros((datasets,1), dtype=np.uint16)
+bemf            = np.zeros((datasets,1), dtype=np.uint16)
+gyro            = np.zeros((datasets,3), dtype=np.int16)
+gyroTimestamp   = np.zeros((datasets,1), dtype=np.uint16)
+rowNum          = np.zeros((datasets,1), dtype=np.uint16)
+rowTimestamp    = np.zeros((datasets,1), dtype=np.uint16)
+rows            = np.zeros((datasets,160), dtype=np.uint8)
+dumpster        = []
+data_received   = 0
+xb              = None
+run_robot       = True
+
 
 #*** Functions ***#
 
 def xbee_received(packet):
-    global  data_received, root, count, offset, \
-            sample, timestamp, bemf, gyro, vsync, row, rows
+    global data_received, root, count, offset, sample, timestamp, bemf, gyro, \
+                                                               vsync, row, rows
 
     data_received += 1
 
@@ -115,7 +117,7 @@ def xbee_received(packet):
     type = pld.type
     data = pld.data
     index = 0
-    
+
     if (type == CMD_RECORD_SENSOR_DUMP):
         datum = struct.unpack('<L3h', data)
         print(datum[0], datum[1], datum[2], datum[3])
@@ -139,18 +141,18 @@ def xbee_received(packet):
                 rows[count,72:116] = np.array(struct.unpack('44B', data[0:44]))
             elif index == 3:
                 rows[count, 116:160] = np.array(struct.unpack('44B', data[0:44]))
-                count = count + 1
+                count += 1
         elif count == datasets:
             print("...all samples were received.")
     elif (type == CMD_ECHO):
         print status, type, data
-    else: 
+    else:
         print "invalid"
         dumpster.append([status, type, data])
 
-def body():
+def main():
     global xb
-    
+
     # Check and parse arguments
     if len(sys.argv) == 1:
         print("\nUsing default arguments...")
@@ -158,7 +160,7 @@ def body():
         baud = DEFAULT_BAUD_RATE
     elif len(sys.argv) == 7:
         print("\nUsing command-line arguments...")
-        ser = sys.argv[1] 
+        ser = sys.argv[1]
         baud = int(sys.argv[2])
         path = sys.argv[3]
         dcval = float(sys.argv[4])
@@ -170,43 +172,40 @@ def body():
 
     root = path + name + '_' + str(int(time.time())) # + '_' + str(dcval)
 
-    xb = BaseStation(ser, baud, DEST_ADDR, xbee_received)
-    xb.setSrcPan(0x2020)    
-    xb.setSrcAddr(0x2021)
+    if run_robot:
+        xb = BaseStation(ser, baud, DEST_ADDR, xbee_received)
+        xb.setSrcPan(SRC_PAN)
+        xb.setSrcAddr(SRC_ADDR)
 
-    
-    #*** Get gyro calibration data    
+        #*** Get gyro calibration data
+        raw_input("Press any key to run gyro calibration")
+        print("\nRunning gyro calibration...")
+        xb.send(0, CMD_RUN_GYRO_CALIB, struct.pack('<H', 2000));
+        time.sleep(3)
+        raw_input("Press any key to request parameters...")
+        xb.send(0, CMD_GET_GYRO_CALIB_PARAM, " ");
+        time.sleep(1)
 
-    #while True:
-    #    print("\nRunning gyro calibration...")
-    #    xb.send(0, CMD_RUN_GYRO_CALIB, struct.pack('<H', 2000));
-    #    time.sleep(3)
+        #*** Duty Cycle update
+        raw_input("Press any key to set motor speed")
+        print("\nSet motor to desired duty cycle...")
+        xb.send(0, CMD_SET_MOTOR_SPEED, struct.pack('<f', dcval))
+        time.sleep(0.5)
 
-#   #     raw_input("Press any key to request parameters...")
+        #*** Sensor dump to memory request
+        raw_input("Press any key to begin sensor dump")
+        print("\nRequesting a sensor dump into memory...")
+        xb.send(0, CMD_RECORD_SENSOR_DUMP, struct.pack('<H', datasets))
+        time.sleep(2.5)
 
-    #    xb.send(0, CMD_GET_GYRO_CALIB_PARAM, " ");
-    #    time.sleep(1) 
+        #*** Stop motor <-- done automatically when requesting mem contents
+        #print("\nStopping motor...")
+        #xb.send(0, CMD_SET_MOTOR_SPEED, struct.pack('<f', 0))
+        #time.sleep(0.5)
 
-    raw_input("Press any key to set motor speed")
-    #*** Duty Cycle update
-    print("\nSet motor to desired duty cycle...")
-    xb.send(0, CMD_SET_MOTOR_SPEED, struct.pack('<f', dcval))
-    time.sleep(0.5)    
-
-    raw_input("Press any key to begin sensor dump")
-    #*** Sensor dump to memory request    
-    print("\nRequesting a sensor dump into memory...")
-    xb.send(0, CMD_RECORD_SENSOR_DUMP, struct.pack('<H', datasets))
-    time.sleep(2.5)
-
-    #*** Stop motor <-- done automatically when requesting mem contents
-    #print("\nStopping motor...")
-    #xb.send(0, CMD_SET_MOTOR_SPEED, struct.pack('<f', 0))
-    #time.sleep(0.5)
-
-    raw_input("Press any key to request memory read")
     #*** Memory contents request
-    print("\nRequesting memory contents...") 
+    raw_input("Press any key to request memory read")
+    print("\nRequesting memory contents...")
     xb.send(0, CMD_GET_MEM_CONTENTS, struct.pack('<3H', 0x080, 0x080 + int(np.ceil(datasets/3.0)), 44))
     time.sleep(0.5)
 
@@ -222,13 +221,13 @@ def body():
 
     # Save all variables for easy import
     np.savez(root + '_data.npz', sample=sample,
-        bemf=bemf, dcval=dcval, gyro=gyro, gyroTimestamp = gyroTimestamp,
-        rowNum = rowNum, rows=rows, rowTimestamp = rowTimestamp)
+        bemf=bemf, dcval=dcval, gyro=gyro, gyroTimestamp=gyroTimestamp,
+        rowNum = rowNum, rows=rows, rowTimestamp=rowTimestamp)
     print("...arrays saved. Done.")
 
     # Save files
     #np.savetxt(root + '_timestamp_data.txt', timestamp_data)
-    #np.savetxt(root + "_gyro_calib.txt", gyro_calib)    
+    #np.savetxt(root + "_gyro_calib.txt", gyro_calib)
     #np.savetxt(root + '_gyro_data.txt', gyro_data)
     #np.savetxt(root + '_bemf_data.txt', bemf_data)
     #np.savetxt(root + '_rows_data.txt', rows_data)
@@ -242,7 +241,7 @@ def body():
     ##dt = t[1:] - t[:-1]
     ##fs = 1/dt
     ##print(fs)
-    #    
+    #
     ## Gyro
     #plt.figure()
     #plt.plot(t,gyro[:,0], t,gyro[:,1], t,gyro[:,2])
@@ -261,21 +260,18 @@ def body():
 def cleanup():
     global xb
     print "Beginning cleanup."
-    
+
     print "Closing radio link..."
     xb.close()
-    
+
     print "Cleanup complete."
 
+
 #*** Program ***#
+
 # Args: serial port, baud rate, path, dcval, datasets, name
 if __name__ == '__main__':
-
     try:
-        
-        body()
-        
+        main()
     finally:
-        
         cleanup()
-        
