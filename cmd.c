@@ -134,20 +134,20 @@ void cmdHandleRadioRxBuffer(void) {
 
     MacPacket packet;
     Payload pld;
-    unsigned char command, status;  
+    unsigned char command, status;
 
     if ((packet = radioDequeueRxPacket()) != NULL) {
         pld = macGetPayload(packet);
         status = payGetStatus(pld);
-        command = payGetType(pld);      
+        command = payGetType(pld);
         if(command < MAX_CMD_FUNC_SIZE) {
             cmd_func[command](status, payGetDataLength(pld), payGetData(pld));
         }
-    } 
         radioReturnPacket(packet);
+    }
 
     return;
-    
+
 }
 
 
@@ -170,8 +170,8 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigne
     chr_test[1] = frame[1];
     chr_test[2] = frame[2];
     chr_test[3] = frame[3];
-    
-    // Update duty cycle - Main drive (PWM1L)    
+
+    // Update duty cycle - Main drive (PWM1L)
     mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
 
     //while(U2STAbits.UTXBF);
@@ -181,8 +181,8 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigne
 static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsigned char *frame) {
 
     unsigned int samples = frame[0] + (frame[1] << 8), count = samples;
-    unsigned long next_sample_time = 0; 
-    
+    unsigned long next_sample_time = 0;
+
     unsigned int mem_byte = 0;
     unsigned int mem_page = 0x080, max_page = mem_page + samples/3 + 0x80, sector = mem_page;
     static unsigned char buf_index = 1;
@@ -202,12 +202,12 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
 
     // Dump sensor data to memory
     LED_ORANGE = 1;
-    
+
     CamRow row_buff;
-    
+
     next_sample_time = swatchToc();
     do {
-        
+
         if (swatchToc() > next_sample_time) {
 
             // Capture sensor datapoint
@@ -222,37 +222,37 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
 
             // NEW CODE
             data.sample = samples - count;
-            
+
             // Check if a row is available
             // If no new row is available, clear respective fields
             if(camHasNewRow()) {
                 row_buff = camGetRow();
-                memcpy(data.row, row_buff->pixels, IM_COLS); 
+                memcpy(data.row, row_buff->pixels, IM_COLS);
                 data.row_num = row_buff->row_num;
                 data.row_timestamp = (unsigned int) (row_buff->timestamp & 0x00FF);
             } else {
                 memset(data.row, 0, IM_COLS);
                 data.row_timestamp = 0;
             }
-            
+
             // Read gyro values
             gyroGetXYZ(data.gyro);
             data.gyro_timestamp = (unsigned int) (swatchToc() & 0x00FF);
             data.bemf = ADC1BUF0;
-            
-            
+
+
             // Send datapoint to memory buffer
             dfmemWriteBuffer(data.contents, MEM_DATAPOINT_SIZE, mem_byte, buf_index);
             mem_byte += MEM_DATAPOINT_SIZE;
 
-            // If buffer full, write it to memory 
-            if (mem_byte + MEM_DATAPOINT_SIZE > MEM_PAGESIZE) { 
+            // If buffer full, write it to memory
+            if (mem_byte + MEM_DATAPOINT_SIZE > MEM_PAGESIZE) {
                 dfmemWriteBuffer2MemoryNoErase(mem_page++, buf_index);
-                buf_index ^= 0x01;  // toggle between buffer 0 and 1                
-                mem_byte = 0; 
+                buf_index ^= 0x01;  // toggle between buffer 0 and 1
+                mem_byte = 0;
             }
 
-            // Stop motor while still sampling, to capture final glide/crash            
+            // Stop motor while still sampling, to capture final glide/crash
             if (count == samples/2) { mcSetDutyCycle(MC_CHANNEL_PWM1, 0); }
 
             next_sample_time = next_sample_time + 1000;
@@ -341,7 +341,7 @@ static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, uns
     if(packet == NULL) { return; }
     macSetDestAddr(packet, BASESTATION_ADDR);
     macSetDestPan(packet, 0x1001);
-    
+
     pld = macGetPayload(packet);
     paySetData(pld, 12, gyroGetCalibParam());
     paySetType(pld, CMD_GET_GYRO_CALIB_PARAM);
@@ -382,7 +382,7 @@ static void cmdRunRadioTest(unsigned char status, unsigned char length, unsigned
  *          AUX functions
 -----------------------------------------------------------------------------*/
 static void cmdEcho(unsigned char status, unsigned char length, unsigned char *frame) {
-    
+
     MacPacket packet;
     Payload pld;
 
@@ -390,14 +390,14 @@ static void cmdEcho(unsigned char status, unsigned char length, unsigned char *f
     if(packet == NULL) { return; }
     macSetDestAddr(packet, BASESTATION_ADDR);
     macSetDestPan(packet, 0x1001);
-    
+
     pld = macGetPayload(packet);
     paySetData(pld, length, frame);
     paySetType(pld, CMD_ECHO);
     paySetStatus(pld, status);
 
     while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
-    
+
 }
 
 static void cmdNop(unsigned char status, unsigned char length, unsigned char *frame) {
