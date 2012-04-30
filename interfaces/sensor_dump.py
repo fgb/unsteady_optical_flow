@@ -32,7 +32,7 @@
 #
 # by Fernando L. Garcia Bermudez and Stanley S. Baek
 #
-# v.0.3 beta
+# v.0.3
 #
 # Revisions:
 #  Fernando L. Garcia Bermudez      2010-9-11   Initial release.
@@ -51,7 +51,8 @@ from ofhlib import payload
 import numpy as np, matplotlib.pyplot as plt, Image
 
 def main():
-
+    global data_rx, count, dump, sample, bemf, gyro, gyro_ts, rows, rows_num, \
+                                                                        rows_ts
     # Execution flags
     do_run_robot = 1
 
@@ -84,17 +85,17 @@ def main():
     CMD_ECHO                 = 0x0f
 
     # Data
-    datasets      = 3000 # (max is 0xFFFF, multiple of 3)
-    count         = 0
-    data_received = 0
-    dumpster      = []
-    sample        = np.zeros((datasets,1), dtype=np.uint16)
-    bemf          = np.zeros((datasets,1), dtype=np.uint16)
-    gyro          = np.zeros((datasets,3), dtype=np.int16)
-    gyroTimestamp = np.zeros((datasets,1), dtype=np.uint16)
-    rowNum        = np.zeros((datasets,1), dtype=np.uint16)
-    rowTimestamp  = np.zeros((datasets,1), dtype=np.uint16)
-    rows          = np.zeros((datasets,160), dtype=np.uint8)
+    datasets = 3000 # (max is 0xFFFF, multiple of 3)
+    data_rx  = 0
+    count    = 0
+    dump     = []
+    sample   = np.zeros((datasets,1), dtype=np.uint16)
+    bemf     = np.zeros((datasets,1), dtype=np.uint16)
+    gyro     = np.zeros((datasets,3), dtype=np.int16)
+    gyro_ts  = np.zeros((datasets,1), dtype=np.uint16)
+    rows     = np.zeros((datasets,160), dtype=np.uint8)
+    rows_num = np.zeros((datasets,1), dtype=np.uint16)
+    row_ts   = np.zeros((datasets,1), dtype=np.uint16)
 
     # Gyro scaling factors
     GYRO_LSB2DEG = 0.0695652174  # 14.375 LSB/(deg/s)
@@ -104,7 +105,7 @@ def main():
     dcval = 0.0
 
     # Establish communication link
-    wrl = radio.radio(port, baud, xbee_received)
+    wrl = radio.radio(port, baud, received)
     #wrl.setSrcPan(src_pan)
     #wrl.setSrcAddr(src_addr)
 
@@ -121,7 +122,6 @@ def main():
         print('I: Setting motor to desired duty cycle...')
 
         # Request sensor dump to memory
-        raw_input('Press any key to begin sensor dump')
         print('I: Requesting a sensor dump into memory...')
         wrl.send(dest_addr, 0, CMD_RECORD_SENSOR_DUMP, struct.pack('<H', datasets))
         time.sleep(2.5)
@@ -138,13 +138,13 @@ def main():
     time.sleep(0.5)
 
     raw_input('I: Press ENTER when data has been received...')
-    print('I: Total packets received: ' + str(data_received)) + ' including ' + str(count) + ' samples.'
+    print('I: Total packets received: ' + str(data_rx)) + ' including ' + str(count) + ' samples.'
 
     # Save all variables for easy import
-    np.savez(root + '_data.npz', sample=sample,
-        bemf=bemf, dcval=dcval, gyro=gyro, gyroTimestamp=gyroTimestamp,
-        rowNum = rowNum, rows=rows, rowTimestamp=rowTimestamp)
-    print('...arrays saved. Done.')
+    np.savez(root + '_data.npz', dcval=dcval, sample=sample, bemf=bemf, \
+             gyro=gyro, gyro_ts=gyro_ts, rows=rows, rows_num=rows_num,  \
+                                                         rows_ts=rows_ts)
+    print('I: Arrays saved. Done.')
 
     # Save files
     #np.savetxt(root + '_timestamp_data.txt', timestamp_data)
@@ -177,9 +177,10 @@ def main():
     ## Show plots
     #plt.show()
 
-def xbee_received(packet):
-    global data_received, count, sample, timestamp, bemf, gyro, vsync, row, rows
-    data_received += 1
+def received(packet):
+    global data_rx, count, dump, sample, bemf, gyro, gyro_ts, rows, rows_num, \
+                                                                        rows_ts
+    data_rx += 1
 
     pld = payload.Payload(packet.get('rf_data'))
 
@@ -201,9 +202,9 @@ def xbee_received(packet):
                 sample[count] = struct.unpack('<H', data[:2])
                 bemf[count] = struct.unpack('<H', data[2:4])
                 gyro[count,:] = struct.unpack('<3h', data[4:10])
-                gyroTimestamp[count] = struct.unpack('<H', data[10:12])
-                rowNum[count] = struct.unpack('<H', data[12:14])
-                rowTimestamp[count] = struct.unpack('<H', data[14:16])
+                gyro_ts[count] = struct.unpack('<H', data[10:12])
+                rows_num[count] = struct.unpack('<H', data[12:14])
+                rows_ts[count] = struct.unpack('<H', data[14:16])
                 rows[count,:28] = np.array(struct.unpack('<28B', data[16:44]))
             elif index == 1:
                 rows[count,28:72] = np.array(struct.unpack('44B', data[0:44]))
@@ -218,7 +219,7 @@ def xbee_received(packet):
         print status, type, data
     else:
         print 'invalid'
-        dumpster.append([status, type, data])
+        dump.append([status, type, data])
 
 
 ### Exception handling
