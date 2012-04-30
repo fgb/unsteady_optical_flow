@@ -109,12 +109,10 @@ run_robot       = True
 #*** Functions ***#
 
 def xbee_received(packet):
-    global data_received, root, count, offset, sample, timestamp, bemf, gyro, \
-                                                               vsync, row, rows
-
+    global data_received, count, sample, timestamp, bemf, gyro, vsync, row, rows
     data_received += 1
 
-    pld = Payload(packet.get('rf_data'))
+    pld = payload.Payload(packet.get('rf_data'))
 
     status = pld.status
     type = pld.type
@@ -146,11 +144,11 @@ def xbee_received(packet):
                 rows[count, 116:160] = np.array(struct.unpack('44B', data[0:44]))
                 count += 1
         elif count == datasets:
-            print("...all samples were received.")
+            print('...all samples were received.')
     elif (type == CMD_ECHO):
         print status, type, data
     else:
-        print "invalid"
+        print 'invalid'
         dumpster.append([status, type, data])
 
 def main():
