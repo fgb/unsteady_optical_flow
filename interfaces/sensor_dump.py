@@ -41,14 +41,15 @@
 #                                               and slight restructuring.
 #
 # Notes:
+#  - Optional arguments: serial port, baud rate, path, dcval, datasets, name
 #  - This file is derived from xboptflow.py, by Stanley S. Baek.
 #
 
-import sys, subprocess, time, struct
+import sys, os, subprocess, time, struct, traceback
+from pymageproc import radio
+from ofhlib import payload
 import numpy as np, matplotlib.pyplot as plt, Image
 
-from ofhlib.basestation import BaseStation
-from ofhlib.payload import Payload
 
 
 #*** Constants ***#
@@ -259,21 +260,17 @@ def main():
     ## Show plots
     #plt.show()
 
-def cleanup():
-    global xb
-    print "Beginning cleanup."
 
-    print "Closing radio link..."
-    xb.close()
+### Exception handling
 
-    print "Cleanup complete."
-
-
-#*** Program ***#
-
-# Args: serial port, baud rate, path, dcval, datasets, name
 if __name__ == '__main__':
     try:
         main()
-    finally:
-        cleanup()
+        sys.exit(0)
+    except SystemExit as e:
+        print('\nI: SystemExit: ' + str(e))
+    except KeyboardInterrupt:
+        print('\nI: KeyboardInterrupt')
+    except Exception as e:
+        print('\nE: Unexpected exception!\n' + str(e))
+        traceback.print_exc()
