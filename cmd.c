@@ -16,7 +16,7 @@
 
 #include "dfmem.h"
 #include "ovcam.h"
-#include "stopwatch.h"
+#include "sclock.h"
 #include "gyro.h"
 
 //#include "pwm.h"
@@ -196,26 +196,22 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
     }
     LED_RED = 0;
 
-    // Reset and start stopwatch
-    // swatchReset();
-    // swatchTic();
-
     // Dump sensor data to memory
     LED_ORANGE = 1;
 
     CamRow row_buff;
 
-    next_sample_time = swatchToc();
+    next_sample_time = sclockGetGlobalMillis();
     do {
 
-        if (swatchToc() > next_sample_time) {
+        if (sclockGetGlobalMillis() > next_sample_time) {
 
             // Capture sensor datapoint
             // OLD CODE
             //data.vsync[0] = OVCAM_VSYNC;
             //ovcamGetRow(data.rows);
             //data.vsync[1] = OVCAM_VSYNC;
-            //data.timestamp = swatchToc();
+            //data.timestamp = sclockGetGlobalMillis();
             //data.bemf = ADC1BUF0;
             //gyroGetXYZ(data.gyro);
             //data.sample = samples - count;
@@ -237,7 +233,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
 
             // Read gyro values
             gyroGetXYZ(data.gyro);
-            data.gyro_timestamp = (unsigned int) (swatchToc() & 0x00FF);
+            data.gyro_timestamp = (unsigned int) (sclockGetGlobalMillis() & 0x00FF);
             data.bemf = ADC1BUF0;
 
 

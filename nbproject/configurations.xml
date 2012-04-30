@@ -21,10 +21,10 @@
         <itemPath>../imageproc-lib/dfmem.c</itemPath>
         <itemPath>../imageproc-lib/payload.c</itemPath>
         <itemPath>../imageproc-lib/spi_controller.c</itemPath>
-        <itemPath>../imageproc-lib/stopwatch.c</itemPath>
         <itemPath>../imageproc-lib/xl.c</itemPath>
         <itemPath>../imageproc-lib/queue.c</itemPath>
         <itemPath>../imageproc-lib/carray.c</itemPath>
+        <itemPath>../imageproc-lib/sclock.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
       <itemPath>cmd.c</itemPath>
@@ -45,7 +45,7 @@
         <targetHeader></targetHeader>
         <platformTool>RealICEPlatformTool</platformTool>
         <languageToolchain>C30</languageToolchain>
-        <languageToolchainVersion></languageToolchainVersion>
+        <languageToolchainVersion>3_30</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -90,11 +90,11 @@
         <property key="extra-include-directories-for-assembler" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="list-file" value=""/>
-        <property key="list-assembly" value="false"/>
         <property key="list-source" value="false"/>
+        <property key="list-assembly" value="false"/>
         <property key="relax" value="false"/>
-        <property key="extra-include-directories-for-preprocessor" value=""/>
         <property key="warning-level" value="emit-warnings"/>
+        <property key="extra-include-directories-for-preprocessor" value=""/>
         <property key="list-section-info" value="false"/>
         <property key="omit-forms" value="false"/>
         <property key="list-symbols" value="false"/>
@@ -120,82 +120,26 @@
         <property key="enable-handles" value="true"/>
         <property key="enable-data-init" value="true"/>
         <property key="secure-flash" value="no_flash"/>
-        <property key="boot-write-protect" value="no_write_protect"/>
-        <property key="boot-flash" value="no_flash"/>
-        <property key="report-memory-usage" value="false"/>
         <property key="generate-cross-reference-file" value="false"/>
+        <property key="report-memory-usage" value="false"/>
+        <property key="boot-flash" value="no_flash"/>
+        <property key="boot-write-protect" value="no_write_protect"/>
         <property key="input-libraries" value=""/>
         <property key="secure-ram" value="no_ram"/>
         <property key="enable-check-sections" value="false"/>
         <property key="enable-default-isr" value="true"/>
         <property key="symbol-stripping" value=""/>
         <property key="boot-ram" value="no_ram"/>
-        <property key="secure-eeprom" value="no_eeprom"/>
         <property key="extra-lib-directories" value=""/>
+        <property key="secure-eeprom" value="no_eeprom"/>
       </C30-LD>
       <C30Global>
         <property key="fast-math" value="true"/>
-        <property key="output-file-format" value="elf"/>
         <property key="legacy-libc" value="false"/>
+        <property key="output-file-format" value="elf"/>
       </C30Global>
-      <PICkit3PlatformTool>
-        <property key="UART 2" value="true"/>
-        <property key="UART 1" value="true"/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
-        <property key="programoptions.eraseb4program" value="true"/>
-        <property key="memories.id" value="false"/>
-        <property key="ToolFirmwareFilePath"
-                  value="Press to browse for a specific firmware version"/>
-        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
-        <property key="memories.eeprom" value="false"/>
-        <property key="programoptions.usehighvoltageonmclr" value="false"/>
-        <property key="INPUT CAPTURE 8" value="true"/>
-        <property key="INPUT CAPTURE 7" value="true"/>
-        <property key="INPUT CAPTURE 6" value="true"/>
-        <property key="QEI" value="true"/>
-        <property key="INPUT CAPTURE 5" value="true"/>
-        <property key="INPUT CAPTURE 4" value="true"/>
-        <property key="INPUT CAPTURE 3" value="true"/>
-        <property key="INPUT CAPTURE 2" value="true"/>
-        <property key="INPUT CAPTURE 1" value="true"/>
-        <property key="programoptions.preserveeeprom" value="false"/>
-        <property key="ADC 2" value="true"/>
-        <property key="ADC 1" value="true"/>
-        <property key="OUTPUT COMPARE 8" value="true"/>
-        <property key="OUTPUT COMPARE 7" value="true"/>
-        <property key="hwtoolclock.frcindebug" value="false"/>
-        <property key="OUTPUT COMPARE 6" value="true"/>
-        <property key="OUTPUT COMPARE 5" value="true"/>
-        <property key="OUTPUT COMPARE 4" value="true"/>
-        <property key="memories.programmemory" value="true"/>
-        <property key="OUTPUT COMPARE 3" value="true"/>
-        <property key="OUTPUT COMPARE 2" value="true"/>
-        <property key="OUTPUT COMPARE 1" value="true"/>
-        <property key="poweroptions.powerenable" value="true"/>
-        <property key="memories.programmemory.start" value="0x0"/>
-        <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
-        <property key="programoptions.preserveprogramrange.start" value="0x0"/>
-        <property key="PWM" value="true"/>
-        <property key="AutoSelectMemRanges" value="auto"/>
-        <property key="TIMER9" value="true"/>
-        <property key="voltagevalue" value="3.25"/>
-        <property key="TIMER8" value="true"/>
-        <property key="TIMER7" value="true"/>
-        <property key="TIMER6" value="true"/>
-        <property key="memories.programmemory.end" value="0x157ff"/>
-        <property key="TIMER5" value="true"/>
-        <property key="TIMER4" value="true"/>
-        <property key="SPI 2" value="true"/>
-        <property key="TIMER3" value="true"/>
-        <property key="SPI 1" value="true"/>
-        <property key="TIMER2" value="true"/>
-        <property key="TIMER1" value="true"/>
-        <property key="programmertogo.imagename" value=""/>
-        <property key="I2C2" value="true"/>
-        <property key="I2C1" value="true"/>
-        <property key="Freeze All Other Peripherals" value="true"/>
-        <property key="programoptions.preserveprogramrange.end" value="0xff"/>
-      </PICkit3PlatformTool>
+      <RealICEPlatformTool>
+      </RealICEPlatformTool>
     </conf>
   </confs>
 </configurationDescriptor>

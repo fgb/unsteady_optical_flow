@@ -50,7 +50,7 @@
 #include "payload.h"
 
 // Modules
-#include "stopwatch.h"
+#include "sclock.h"
 #include "radio.h"
 #include "led.h"
 #include "utils.h"
@@ -71,7 +71,7 @@ int main(void) {
     /* Declarations */
     unsigned int i;
 
-    /* Initialization */    
+    /* Initialization */
     SetupClock();
     SwitchClocks();
     SetupPorts();
@@ -81,22 +81,22 @@ int main(void) {
     spicSetup();
     ppoolInit();
     radioInit(40, 10);   // tx_queue = 40, rx_queue = 10
-    radioSetChannel(0x16);    
+    radioSetChannel(0x16);
     radioSetSrcPanID(0x1100);
     radioSetSrcAddr(0x1102);
 
     mcSetup();
-    swatchSetup();
-    
+    sclockSetup();
+
     gyroSetup();
     dfmemSetup();
     // ovcamSetup before xlSetup!
     ovcamSetup();
     camSetup();
     xlSetup();
-   
-    cmdSetup();     
-        
+
+    cmdSetup();
+
     /* Boot-up sequence */
     for (i = 0; i < 6; i++) {
         LED_GREEN = ~LED_GREEN;
@@ -111,7 +111,6 @@ int main(void) {
     LED_RED = 0;
     LED_ORANGE = 0;
 
-    swatchReset();
     camStart();
 
     /* Program */
@@ -120,5 +119,5 @@ int main(void) {
         cmdHandleRadioRxBuffer();
         radioProcess();
 
-    }    
+    }
 }
