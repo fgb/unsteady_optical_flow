@@ -50,63 +50,132 @@ from pymageproc import radio
 from ofhlib import payload
 import numpy as np, matplotlib.pyplot as plt, Image
 
+def main():
 
+    # Execution flags
+    do_run_robot = 1
 
-#*** Constants ***#
+    # Construct filename
+    path     = os.path.expanduser('~/Research/Data/tests/sensorDump/')
+    name     = 'test'
+    datetime = time.localtime()
+    dt_str   = time.strftime('%Y.%m.%d_%H.%M.%S', datetime)
+    root = path + dt_str + '_' + name
+    print('I: Experimental data will be saved to ' + root + '*')
 
-# XBee
-#DEFAULT_SERIAL_PORT = '/dev/tty.usbserial-A700eYvL' # Overriden by argv 1
-#DEFAULT_BAUD_RATE = 57600                           # Overriden by argv 2
+    # Radio settings
+    src_pan   = '0x1100'
+    src_addr  = '0x1101'
+    dest_addr = '\x11\x02'
+    port      = '/dev/tty.usbserial-A700ePgy'  # Basestation
+    baud      = 230400
+    #port      = '/dev/tty.usbserial-A700eYvL' # XBee
+    #baud      = 57600
 
-# Basestation
-DEFAULT_SERIAL_PORT = '/dev/tty.usbserial-A700ePgy' # Overriden by argv 1
-DEFAULT_BAUD_RATE = 230400                          # Overriden by argv 2
+    # Commands
+    CMD_SET_MOTOR_SPEED      = 0
+    CMD_GET_PICTURE          = 1
+    CMD_GET_VIDEO            = 2
+    CMD_GET_LINES            = 3
+    CMD_RECORD_SENSOR_DUMP   = 4
+    CMD_GET_MEM_CONTENTS     = 5
+    CMD_RUN_GYRO_CALIB       = 0x0d
+    CMD_GET_GYRO_CALIB_PARAM = 0x0e
+    CMD_ECHO                 = 0x0f
 
-SRC_PAN   = '0x1100'
-SRC_ADDR  = '0x1101'
-DEST_ADDR = '\x11\x02'
+    # Data
+    datasets      = 3000 # (max is 0xFFFF, multiple of 3)
+    count         = 0
+    data_received = 0
+    dumpster      = []
+    sample        = np.zeros((datasets,1), dtype=np.uint16)
+    bemf          = np.zeros((datasets,1), dtype=np.uint16)
+    gyro          = np.zeros((datasets,3), dtype=np.int16)
+    gyroTimestamp = np.zeros((datasets,1), dtype=np.uint16)
+    rowNum        = np.zeros((datasets,1), dtype=np.uint16)
+    rowTimestamp  = np.zeros((datasets,1), dtype=np.uint16)
+    rows          = np.zeros((datasets,160), dtype=np.uint8)
 
-# Commands
-CMD_SET_MOTOR_SPEED      = 0
-CMD_GET_PICTURE          = 1
-CMD_GET_VIDEO            = 2
-CMD_GET_LINES            = 3
-CMD_RECORD_SENSOR_DUMP   = 4
-CMD_GET_MEM_CONTENTS     = 5
-CMD_RUN_GYRO_CALIB       = 0x0d
-CMD_GET_GYRO_CALIB_PARAM = 0x0e
-CMD_ECHO                 = 0x0f
+    # Gyro scaling factors
+    GYRO_LSB2DEG = 0.0695652174  # 14.375 LSB/(deg/s)
+    GYRO_LSB2RAD = 0.00121414209
 
-# Where to place exp data
-path = '/Users/fgb/Research/Data/tests/sensorDump/' # Overriden by argv 3
-name = 'test'                                       # Overriden by argv 6
+    # Motor
+    dcval = 0.0
 
-# Gyro scaling factors
-GYRO_LSB2DEG = 0.0695652174     # 14.375 LSB/(deg/s)
-GYRO_LSB2RAD = 0.00121414209
+    # Establish communication link
+    wrl = radio.radio(port, baud, xbee_received)
+    #wrl.setSrcPan(src_pan)
+    #wrl.setSrcAddr(src_addr)
 
-# Other parameters
-dcval    = 5.0  # Overriden by argv 4
-datasets = 3000 # Overriden by argv 5 (max is 0xFFFF, multiple of 3)
+    # Run robot
+    if do_run_robot:
+        # Get gyro calibration data
+        wrl.send(dest_addr, 0, CMD_RUN_GYRO_CALIB, struct.pack('<H', 2000));
+        print('I: Running gyro calibration...')
+        time.sleep(2)
+        wrl.send(dest_addr, 0, CMD_GET_GYRO_CALIB_PARAM, ' ');
 
+        # Update duty cycle
+        wrl.send(dest_addr, 0, CMD_SET_MOTOR_SPEED, struct.pack('<f', dcval))
+        print('I: Setting motor to desired duty cycle...')
 
-#*** Variables ***#
-count           = 0
-offset          = 0
-sample          = np.zeros((datasets,1), dtype=np.uint16)
-bemf            = np.zeros((datasets,1), dtype=np.uint16)
-gyro            = np.zeros((datasets,3), dtype=np.int16)
-gyroTimestamp   = np.zeros((datasets,1), dtype=np.uint16)
-rowNum          = np.zeros((datasets,1), dtype=np.uint16)
-rowTimestamp    = np.zeros((datasets,1), dtype=np.uint16)
-rows            = np.zeros((datasets,160), dtype=np.uint8)
-dumpster        = []
-data_received   = 0
-xb              = None
-run_robot       = True
+        # Request sensor dump to memory
+        raw_input('Press any key to begin sensor dump')
+        print('I: Requesting a sensor dump into memory...')
+        wrl.send(dest_addr, 0, CMD_RECORD_SENSOR_DUMP, struct.pack('<H', datasets))
+        time.sleep(2.5)
 
+        # Stop motor <-- done automatically when requesting mem contents
+        #print('I: Stopping motor...')
+        #wrl.send(dest_addr, 0, CMD_SET_MOTOR_SPEED, struct.pack('<f', 0))
+        #time.sleep(0.5)
 
-#*** Functions ***#
+    # Request memory contents
+    raw_input('Press any key to request memory read')
+    print('I: Requesting memory contents...')
+    wrl.send(dest_addr, 0, CMD_GET_MEM_CONTENTS, struct.pack('<3H', 0x080, 0x080 + int(np.ceil(datasets/3.0)), 44))
+    time.sleep(0.5)
+
+    raw_input('I: Press ENTER when data has been received...')
+    print('I: Total packets received: ' + str(data_received)) + ' including ' + str(count) + ' samples.'
+
+    # Save all variables for easy import
+    np.savez(root + '_data.npz', sample=sample,
+        bemf=bemf, dcval=dcval, gyro=gyro, gyroTimestamp=gyroTimestamp,
+        rowNum = rowNum, rows=rows, rowTimestamp=rowTimestamp)
+    print('...arrays saved. Done.')
+
+    # Save files
+    #np.savetxt(root + '_timestamp_data.txt', timestamp_data)
+    #np.savetxt(root + '_gyro_calib.txt', gyro_calib)
+    #np.savetxt(root + '_gyro_data.txt', gyro_data)
+    #np.savetxt(root + '_bemf_data.txt', bemf_data)
+    #np.savetxt(root + '_rows_data.txt', rows_data)
+    #print('I: Files saved!')
+
+    #*** Visualize sensor dump
+
+    ## Timestamps
+    #t = timestamp/1E6
+    ##dt = t[1:] - t[:-1]
+    ##fs = 1/dt
+    ##print(fs)
+    #
+    ## Gyro
+    #plt.figure()
+    #plt.plot(t,gyro[:,0], t,gyro[:,1], t,gyro[:,2])
+    #
+    ## Back-EMF
+    #V = 4.0 * np.array(1023.0 - bemf, dtype=float) / 1023.0
+    #plt.figure()
+    #plt.plot(t,V)
+    #
+    ## Rows
+    #Image.fromarray(rows).show()
+    #
+    ## Show plots
+    #plt.show()
 
 def xbee_received(packet):
     global data_received, count, sample, timestamp, bemf, gyro, vsync, row, rows
@@ -150,113 +219,6 @@ def xbee_received(packet):
     else:
         print 'invalid'
         dumpster.append([status, type, data])
-
-def main():
-    global xb
-
-    # Check and parse arguments
-    if len(sys.argv) == 1:
-        print("\nUsing default arguments...")
-        ser = DEFAULT_SERIAL_PORT
-        baud = DEFAULT_BAUD_RATE
-    elif len(sys.argv) == 7:
-        print("\nUsing command-line arguments...")
-        ser = sys.argv[1]
-        baud = int(sys.argv[2])
-        path = sys.argv[3]
-        dcval = float(sys.argv[4])
-        datasets = int(sys.argv[5])
-        name = sys.argv[6]
-    else:
-        print("Incorrect number of arguments. Need serial port, baudrate, path/, duty cycle, and experiment name.")
-        sys.exit(1)
-
-    root = path + name + '_' + str(int(time.time())) # + '_' + str(dcval)
-
-    if run_robot:
-        xb = BaseStation(ser, baud, DEST_ADDR, xbee_received)
-        xb.setSrcPan(SRC_PAN)
-        xb.setSrcAddr(SRC_ADDR)
-
-        #*** Get gyro calibration data
-        raw_input("Press any key to run gyro calibration")
-        print("\nRunning gyro calibration...")
-        xb.send(0, CMD_RUN_GYRO_CALIB, struct.pack('<H', 2000));
-        time.sleep(3)
-        raw_input("Press any key to request parameters...")
-        xb.send(0, CMD_GET_GYRO_CALIB_PARAM, " ");
-        time.sleep(1)
-
-        #*** Duty Cycle update
-        raw_input("Press any key to set motor speed")
-        print("\nSet motor to desired duty cycle...")
-        xb.send(0, CMD_SET_MOTOR_SPEED, struct.pack('<f', dcval))
-        time.sleep(0.5)
-
-        #*** Sensor dump to memory request
-        raw_input("Press any key to begin sensor dump")
-        print("\nRequesting a sensor dump into memory...")
-        xb.send(0, CMD_RECORD_SENSOR_DUMP, struct.pack('<H', datasets))
-        time.sleep(2.5)
-
-        #*** Stop motor <-- done automatically when requesting mem contents
-        #print("\nStopping motor...")
-        #xb.send(0, CMD_SET_MOTOR_SPEED, struct.pack('<f', 0))
-        #time.sleep(0.5)
-
-    #*** Memory contents request
-    raw_input("Press any key to request memory read")
-    print("\nRequesting memory contents...")
-    xb.send(0, CMD_GET_MEM_CONTENTS, struct.pack('<3H', 0x080, 0x080 + int(np.ceil(datasets/3.0)), 44))
-    time.sleep(0.5)
-
-    raw_input("\nPress ENTER when data has been received...")
-    print("\nTotal packets received: " + str(data_received)) + " including " + str(count) + " samples."
-
-    # Account for errors?
-    print("Account for errors? Offset = " + str(offset))
-    #timestamp_data = timestamp[:-offset,:]
-    #gyro_data = gyro[:-offset,:]
-    #bemf_data = bemf[:-offset]
-    #rows_data = rows[:-offset]
-
-    # Save all variables for easy import
-    np.savez(root + '_data.npz', sample=sample,
-        bemf=bemf, dcval=dcval, gyro=gyro, gyroTimestamp=gyroTimestamp,
-        rowNum = rowNum, rows=rows, rowTimestamp=rowTimestamp)
-    print("...arrays saved. Done.")
-
-    # Save files
-    #np.savetxt(root + '_timestamp_data.txt', timestamp_data)
-    #np.savetxt(root + "_gyro_calib.txt", gyro_calib)
-    #np.savetxt(root + '_gyro_data.txt', gyro_data)
-    #np.savetxt(root + '_bemf_data.txt', bemf_data)
-    #np.savetxt(root + '_rows_data.txt', rows_data)
-    #print("\nFiles saved!")
-
-
-    #*** Visualize sensor dump
-
-    ## Timestamps
-    #t = timestamp/1E6
-    ##dt = t[1:] - t[:-1]
-    ##fs = 1/dt
-    ##print(fs)
-    #
-    ## Gyro
-    #plt.figure()
-    #plt.plot(t,gyro[:,0], t,gyro[:,1], t,gyro[:,2])
-    #
-    ## Back-EMF
-    #V = 4.0 * np.array(1023.0 - bemf, dtype=float) / 1023.0
-    #plt.figure()
-    #plt.plot(t,V)
-    #
-    ## Rows
-    #Image.fromarray(rows).show()
-    #
-    ## Show plots
-    #plt.show()
 
 
 ### Exception handling
