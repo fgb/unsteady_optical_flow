@@ -45,7 +45,9 @@
 #define CMD_ECHO                    0x0f
 #define CMD_RUN_RADIO_TEST          0x10
 
-#define BASESTATION_ADDR            0x1020
+#define PAN_ID                      0x1100
+#define DEST_ADDR                   0x1101
+#define SRC_ADDR                    0x1102
 
 /* Declarations */
 #define IM_COLS                     160
@@ -291,8 +293,8 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
             if(packet == NULL) {
                 continue;
             }
-            macSetDestAddr(packet, BASESTATION_ADDR);
-            macSetDestPan(packet, 0x1001);
+            macSetDestAddr(packet, DEST_ADDR);
+            macSetDestPan(packet, PAN_ID);
             pld = macGetPayload(packet);
             dfmemRead(page, j, tx_data_size, payGetData(pld));
             paySetStatus(pld, count++);
@@ -335,8 +337,8 @@ static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, uns
 
     packet = radioRequestPacket(12);
     if(packet == NULL) { return; }
-    macSetDestAddr(packet, BASESTATION_ADDR);
-    macSetDestPan(packet, 0x1001);
+    macSetDestAddr(packet, DEST_ADDR);
+    macSetDestPan(packet, PAN_ID);
 
     pld = macGetPayload(packet);
     paySetData(pld, 12, gyroGetCalibParam());
@@ -361,8 +363,8 @@ static void cmdRunRadioTest(unsigned char status, unsigned char length, unsigned
         packet = radioRequestPacket(size);
         if(packet == NULL) { continue; }
 
-        macSetDestAddr(packet, BASESTATION_ADDR);
-        macSetDestPan(packet, 0x1001);
+        macSetDestAddr(packet, DEST_ADDR);
+        macSetDestPan(packet, PAN_ID);
         i++;
 
         pld = macGetPayload(packet);
@@ -384,8 +386,8 @@ static void cmdEcho(unsigned char status, unsigned char length, unsigned char *f
 
     packet = radioRequestPacket(length);
     if(packet == NULL) { return; }
-    macSetDestAddr(packet, BASESTATION_ADDR);
-    macSetDestPan(packet, 0x1001);
+    macSetDestAddr(packet, DEST_ADDR);
+    macSetDestPan(packet, PAN_ID);
 
     pld = macGetPayload(packet);
     paySetData(pld, length, frame);
