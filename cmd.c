@@ -209,6 +209,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
         if (sclockGetGlobalMillis() > next_sample_time) {
 
             // Capture sensor datapoint
+
             // OLD CODE
             //data.vsync[0] = OVCAM_VSYNC;
             //ovcamGetRow(data.rows);
@@ -253,8 +254,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             // Stop motor while still sampling, to capture final glide/crash
             if (count == samples/2) { mcSetDutyCycle(MC_CHANNEL_PWM1, 0); }
 
-            next_sample_time = next_sample_time + 1000;
-            //delay_ms(2);
+            next_sample_time = next_sample_time + 1;
             count--;
         }
     } while (count);
