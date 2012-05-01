@@ -50,6 +50,17 @@ from pymageproc import radio
 from ofhlib import payload
 import numpy as np, matplotlib.pyplot as plt, Image
 
+# Commands
+CMD_SET_MOTOR_SPEED      = 0
+CMD_GET_PICTURE          = 1
+CMD_GET_VIDEO            = 2
+CMD_GET_LINES            = 3
+CMD_RECORD_SENSOR_DUMP   = 4
+CMD_GET_MEM_CONTENTS     = 5
+CMD_RUN_GYRO_CALIB       = 0x0d
+CMD_GET_GYRO_CALIB_PARAM = 0x0e
+CMD_ECHO                 = 0x0f
+
 def main():
     global data_rx, count, dump, sample, bemf, gyro, gyro_ts, rows, rows_num, \
                                                                         rows_ts
@@ -72,17 +83,6 @@ def main():
     baud      = 230400
     #port      = '/dev/tty.usbserial-A700eYvL' # XBee
     #baud      = 57600
-
-    # Commands
-    CMD_SET_MOTOR_SPEED      = 0
-    CMD_GET_PICTURE          = 1
-    CMD_GET_VIDEO            = 2
-    CMD_GET_LINES            = 3
-    CMD_RECORD_SENSOR_DUMP   = 4
-    CMD_GET_MEM_CONTENTS     = 5
-    CMD_RUN_GYRO_CALIB       = 0x0d
-    CMD_GET_GYRO_CALIB_PARAM = 0x0e
-    CMD_ECHO                 = 0x0f
 
     # Data
     datasets = 3000 # (max is 0xFFFF, multiple of 3)
