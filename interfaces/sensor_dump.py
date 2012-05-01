@@ -62,8 +62,8 @@ CMD_GET_GYRO_CALIB_PARAM = 0x0e
 CMD_ECHO                 = 0x0f
 
 def main():
-    global data_rx, count, dump, sample, bemf, gyro, gyro_ts, rows, rows_num, \
-                                                                        rows_ts
+    global datasets, data_rx, count, dump, sample, bemf, gyro, gyro_ts,   \
+                                                    rows, rows_num, rows_ts
     # Execution flags
     do_run_robot = 1
 
@@ -95,7 +95,7 @@ def main():
     gyro_ts  = np.zeros((datasets,1), dtype=np.uint16)
     rows     = np.zeros((datasets,160), dtype=np.uint8)
     rows_num = np.zeros((datasets,1), dtype=np.uint16)
-    row_ts   = np.zeros((datasets,1), dtype=np.uint16)
+    rows_ts  = np.zeros((datasets,1), dtype=np.uint16)
 
     # Gyro scaling factors
     GYRO_LSB2DEG = 0.0695652174  # 14.375 LSB/(deg/s)
@@ -138,7 +138,7 @@ def main():
     time.sleep(0.5)
 
     raw_input('I: Press ENTER when data has been received...')
-    print('I: Total packets received: ' + str(data_rx)) + ' including ' + str(count) + ' samples.'
+    print('I: Total packets received: ' + str(data_rx) + ' including ' + str(count) + ' samples.')
 
     # Save all variables for easy import
     np.savez(root + '_data.npz', dcval=dcval, sample=sample, bemf=bemf, \
@@ -194,7 +194,7 @@ def received(packet):
         print(datum[0], datum[1], datum[2], datum[3])
     elif (type == CMD_GET_GYRO_CALIB_PARAM):
         gyro_calib = np.array(struct.unpack('<3f', data))
-        print gyro_calib
+        print(gyro_calib)
     elif (type == CMD_GET_MEM_CONTENTS):
         if count < datasets:
             index = status % 4
@@ -216,9 +216,9 @@ def received(packet):
         elif count == datasets:
             print('...all samples were received.')
     elif (type == CMD_ECHO):
-        print status, type, data
+        print(status, type, data)
     else:
-        print 'invalid'
+        print('invalid')
         dump.append([status, type, data])
 
 
