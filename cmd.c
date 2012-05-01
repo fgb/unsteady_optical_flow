@@ -289,6 +289,7 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
     for (page = start_page; page < end_page; ++page) {
         j = 0;
         while (j + tx_data_size <= 528) {
+            radioProcess();
             packet = radioRequestPacket(tx_data_size);
             if(packet == NULL) {
                 continue;
