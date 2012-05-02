@@ -39,11 +39,11 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/921515994/battery.o ${OBJECTDIR}/_ext/921515994/counter.o ${OBJECTDIR}/_ext/921515994/init_default.o ${OBJECTDIR}/_ext/921515994/gyro.o ${OBJECTDIR}/_ext/921515994/ovcam.o ${OBJECTDIR}/_ext/921515994/ovcamHS.o ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o ${OBJECTDIR}/_ext/921515994/mac_packet.o ${OBJECTDIR}/_ext/921515994/init.o ${OBJECTDIR}/_ext/921515994/ppool.o ${OBJECTDIR}/_ext/921515994/radio.o ${OBJECTDIR}/_ext/921515994/cam.o ${OBJECTDIR}/_ext/921515994/delay.o ${OBJECTDIR}/_ext/921515994/dfmem.o ${OBJECTDIR}/_ext/921515994/payload.o ${OBJECTDIR}/_ext/921515994/spi_controller.o ${OBJECTDIR}/_ext/921515994/xl.o ${OBJECTDIR}/_ext/921515994/queue.o ${OBJECTDIR}/_ext/921515994/carray.o ${OBJECTDIR}/main.o ${OBJECTDIR}/cmd.o ${OBJECTDIR}/motor_ctrl.o ${OBJECTDIR}/_ext/921515994/sclock.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/921515994/battery.o.d ${OBJECTDIR}/_ext/921515994/counter.o.d ${OBJECTDIR}/_ext/921515994/init_default.o.d ${OBJECTDIR}/_ext/921515994/gyro.o.d ${OBJECTDIR}/_ext/921515994/ovcam.o.d ${OBJECTDIR}/_ext/921515994/ovcamHS.o.d ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o.d ${OBJECTDIR}/_ext/921515994/mac_packet.o.d ${OBJECTDIR}/_ext/921515994/init.o.d ${OBJECTDIR}/_ext/921515994/ppool.o.d ${OBJECTDIR}/_ext/921515994/radio.o.d ${OBJECTDIR}/_ext/921515994/cam.o.d ${OBJECTDIR}/_ext/921515994/delay.o.d ${OBJECTDIR}/_ext/921515994/dfmem.o.d ${OBJECTDIR}/_ext/921515994/payload.o.d ${OBJECTDIR}/_ext/921515994/spi_controller.o.d ${OBJECTDIR}/_ext/921515994/xl.o.d ${OBJECTDIR}/_ext/921515994/queue.o.d ${OBJECTDIR}/_ext/921515994/carray.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/cmd.o.d ${OBJECTDIR}/motor_ctrl.o.d ${OBJECTDIR}/_ext/921515994/sclock.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/921515994/battery.o ${OBJECTDIR}/_ext/921515994/counter.o ${OBJECTDIR}/_ext/921515994/init_default.o ${OBJECTDIR}/_ext/921515994/gyro.o ${OBJECTDIR}/_ext/921515994/ovcam.o ${OBJECTDIR}/_ext/921515994/ovcamHS.o ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o ${OBJECTDIR}/_ext/921515994/mac_packet.o ${OBJECTDIR}/_ext/921515994/init.o ${OBJECTDIR}/_ext/921515994/ppool.o ${OBJECTDIR}/_ext/921515994/radio.o ${OBJECTDIR}/_ext/921515994/cam.o ${OBJECTDIR}/_ext/921515994/delay.o ${OBJECTDIR}/_ext/921515994/dfmem.o ${OBJECTDIR}/_ext/921515994/payload.o ${OBJECTDIR}/_ext/921515994/spi_controller.o ${OBJECTDIR}/_ext/921515994/xl.o ${OBJECTDIR}/_ext/921515994/queue.o ${OBJECTDIR}/_ext/921515994/carray.o ${OBJECTDIR}/_ext/921515994/sclock.o ${OBJECTDIR}/main.o ${OBJECTDIR}/cmd.o ${OBJECTDIR}/motor_ctrl.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/921515994/battery.o.d ${OBJECTDIR}/_ext/921515994/counter.o.d ${OBJECTDIR}/_ext/921515994/init_default.o.d ${OBJECTDIR}/_ext/921515994/gyro.o.d ${OBJECTDIR}/_ext/921515994/ovcam.o.d ${OBJECTDIR}/_ext/921515994/ovcamHS.o.d ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o.d ${OBJECTDIR}/_ext/921515994/mac_packet.o.d ${OBJECTDIR}/_ext/921515994/init.o.d ${OBJECTDIR}/_ext/921515994/ppool.o.d ${OBJECTDIR}/_ext/921515994/radio.o.d ${OBJECTDIR}/_ext/921515994/cam.o.d ${OBJECTDIR}/_ext/921515994/delay.o.d ${OBJECTDIR}/_ext/921515994/dfmem.o.d ${OBJECTDIR}/_ext/921515994/payload.o.d ${OBJECTDIR}/_ext/921515994/spi_controller.o.d ${OBJECTDIR}/_ext/921515994/xl.o.d ${OBJECTDIR}/_ext/921515994/queue.o.d ${OBJECTDIR}/_ext/921515994/carray.o.d ${OBJECTDIR}/_ext/921515994/sclock.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/cmd.o.d ${OBJECTDIR}/motor_ctrl.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/_ext/921515994/battery.o ${OBJECTDIR}/_ext/921515994/counter.o ${OBJECTDIR}/_ext/921515994/init_default.o ${OBJECTDIR}/_ext/921515994/gyro.o ${OBJECTDIR}/_ext/921515994/ovcam.o ${OBJECTDIR}/_ext/921515994/ovcamHS.o ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o ${OBJECTDIR}/_ext/921515994/mac_packet.o ${OBJECTDIR}/_ext/921515994/init.o ${OBJECTDIR}/_ext/921515994/ppool.o ${OBJECTDIR}/_ext/921515994/radio.o ${OBJECTDIR}/_ext/921515994/cam.o ${OBJECTDIR}/_ext/921515994/delay.o ${OBJECTDIR}/_ext/921515994/dfmem.o ${OBJECTDIR}/_ext/921515994/payload.o ${OBJECTDIR}/_ext/921515994/spi_controller.o ${OBJECTDIR}/_ext/921515994/xl.o ${OBJECTDIR}/_ext/921515994/queue.o ${OBJECTDIR}/_ext/921515994/carray.o ${OBJECTDIR}/main.o ${OBJECTDIR}/cmd.o ${OBJECTDIR}/motor_ctrl.o ${OBJECTDIR}/_ext/921515994/sclock.o
+OBJECTFILES=${OBJECTDIR}/_ext/921515994/battery.o ${OBJECTDIR}/_ext/921515994/counter.o ${OBJECTDIR}/_ext/921515994/init_default.o ${OBJECTDIR}/_ext/921515994/gyro.o ${OBJECTDIR}/_ext/921515994/ovcam.o ${OBJECTDIR}/_ext/921515994/ovcamHS.o ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o ${OBJECTDIR}/_ext/921515994/mac_packet.o ${OBJECTDIR}/_ext/921515994/init.o ${OBJECTDIR}/_ext/921515994/ppool.o ${OBJECTDIR}/_ext/921515994/radio.o ${OBJECTDIR}/_ext/921515994/cam.o ${OBJECTDIR}/_ext/921515994/delay.o ${OBJECTDIR}/_ext/921515994/dfmem.o ${OBJECTDIR}/_ext/921515994/payload.o ${OBJECTDIR}/_ext/921515994/spi_controller.o ${OBJECTDIR}/_ext/921515994/xl.o ${OBJECTDIR}/_ext/921515994/queue.o ${OBJECTDIR}/_ext/921515994/carray.o ${OBJECTDIR}/_ext/921515994/sclock.o ${OBJECTDIR}/main.o ${OBJECTDIR}/cmd.o ${OBJECTDIR}/motor_ctrl.o
 
 
 CFLAGS=
@@ -220,6 +220,12 @@ ${OBJECTDIR}/_ext/921515994/carray.o: ../imageproc-lib/carray.c  nbproject/Makef
 	@${RM} ${OBJECTDIR}/_ext/921515994/carray.o.ok ${OBJECTDIR}/_ext/921515994/carray.o.err 
 	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/carray.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION) -D__IMAGEPROC2 -D__DFMEM_32MBIT -I"./" -I"../imageproc-lib/" -MMD -MF "${OBJECTDIR}/_ext/921515994/carray.o.d" -o ${OBJECTDIR}/_ext/921515994/carray.o ../imageproc-lib/carray.c  -fast-math
 	
+${OBJECTDIR}/_ext/921515994/sclock.o: ../imageproc-lib/sclock.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
+	@${RM} ${OBJECTDIR}/_ext/921515994/sclock.o.d 
+	@${RM} ${OBJECTDIR}/_ext/921515994/sclock.o.ok ${OBJECTDIR}/_ext/921515994/sclock.o.err 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/sclock.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION) -D__IMAGEPROC2 -D__DFMEM_32MBIT -I"./" -I"../imageproc-lib/" -MMD -MF "${OBJECTDIR}/_ext/921515994/sclock.o.d" -o ${OBJECTDIR}/_ext/921515994/sclock.o ../imageproc-lib/sclock.c  -fast-math
+	
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR} 
 	@${RM} ${OBJECTDIR}/main.o.d 
@@ -237,12 +243,6 @@ ${OBJECTDIR}/motor_ctrl.o: motor_ctrl.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/motor_ctrl.o.d 
 	@${RM} ${OBJECTDIR}/motor_ctrl.o.ok ${OBJECTDIR}/motor_ctrl.o.err 
 	@${FIXDEPS} "${OBJECTDIR}/motor_ctrl.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION) -D__IMAGEPROC2 -D__DFMEM_32MBIT -I"./" -I"../imageproc-lib/" -MMD -MF "${OBJECTDIR}/motor_ctrl.o.d" -o ${OBJECTDIR}/motor_ctrl.o motor_ctrl.c  -fast-math
-	
-${OBJECTDIR}/_ext/921515994/sclock.o: ../imageproc-lib/sclock.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
-	@${RM} ${OBJECTDIR}/_ext/921515994/sclock.o.d 
-	@${RM} ${OBJECTDIR}/_ext/921515994/sclock.o.ok ${OBJECTDIR}/_ext/921515994/sclock.o.err 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/sclock.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION) -D__IMAGEPROC2 -D__DFMEM_32MBIT -I"./" -I"../imageproc-lib/" -MMD -MF "${OBJECTDIR}/_ext/921515994/sclock.o.d" -o ${OBJECTDIR}/_ext/921515994/sclock.o ../imageproc-lib/sclock.c  -fast-math
 	
 else
 ${OBJECTDIR}/_ext/921515994/battery.o: ../imageproc-lib/battery.c  nbproject/Makefile-${CND_CONF}.mk
@@ -347,6 +347,12 @@ ${OBJECTDIR}/_ext/921515994/carray.o: ../imageproc-lib/carray.c  nbproject/Makef
 	@${RM} ${OBJECTDIR}/_ext/921515994/carray.o.ok ${OBJECTDIR}/_ext/921515994/carray.o.err 
 	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/carray.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION) -D__IMAGEPROC2 -D__DFMEM_32MBIT -I"./" -I"../imageproc-lib/" -MMD -MF "${OBJECTDIR}/_ext/921515994/carray.o.d" -o ${OBJECTDIR}/_ext/921515994/carray.o ../imageproc-lib/carray.c  -fast-math
 	
+${OBJECTDIR}/_ext/921515994/sclock.o: ../imageproc-lib/sclock.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
+	@${RM} ${OBJECTDIR}/_ext/921515994/sclock.o.d 
+	@${RM} ${OBJECTDIR}/_ext/921515994/sclock.o.ok ${OBJECTDIR}/_ext/921515994/sclock.o.err 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/sclock.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION) -D__IMAGEPROC2 -D__DFMEM_32MBIT -I"./" -I"../imageproc-lib/" -MMD -MF "${OBJECTDIR}/_ext/921515994/sclock.o.d" -o ${OBJECTDIR}/_ext/921515994/sclock.o ../imageproc-lib/sclock.c  -fast-math
+	
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR} 
 	@${RM} ${OBJECTDIR}/main.o.d 
@@ -364,12 +370,6 @@ ${OBJECTDIR}/motor_ctrl.o: motor_ctrl.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/motor_ctrl.o.d 
 	@${RM} ${OBJECTDIR}/motor_ctrl.o.ok ${OBJECTDIR}/motor_ctrl.o.err 
 	@${FIXDEPS} "${OBJECTDIR}/motor_ctrl.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION) -D__IMAGEPROC2 -D__DFMEM_32MBIT -I"./" -I"../imageproc-lib/" -MMD -MF "${OBJECTDIR}/motor_ctrl.o.d" -o ${OBJECTDIR}/motor_ctrl.o motor_ctrl.c  -fast-math
-	
-${OBJECTDIR}/_ext/921515994/sclock.o: ../imageproc-lib/sclock.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
-	@${RM} ${OBJECTDIR}/_ext/921515994/sclock.o.d 
-	@${RM} ${OBJECTDIR}/_ext/921515994/sclock.o.ok ${OBJECTDIR}/_ext/921515994/sclock.o.err 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/sclock.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION) -D__IMAGEPROC2 -D__DFMEM_32MBIT -I"./" -I"../imageproc-lib/" -MMD -MF "${OBJECTDIR}/_ext/921515994/sclock.o.d" -o ${OBJECTDIR}/_ext/921515994/sclock.o ../imageproc-lib/sclock.c  -fast-math
 	
 endif
 
