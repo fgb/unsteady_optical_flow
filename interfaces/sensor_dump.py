@@ -46,9 +46,8 @@
 #
 
 import sys, os, subprocess, time, struct, traceback
-from pymageproc import radio
-from ofhlib import payload
 import numpy as np, matplotlib.pyplot as plt, Image
+from pymageproc import radio, payload
 
 # Commands
 CMD_SET_MOTOR_SPEED      = 0
