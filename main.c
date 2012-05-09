@@ -40,31 +40,23 @@
  */
 
 #include "init_default.h"
-#include "init.h"
-//#include "interrupts.h"
-#include "cmd.h"
-#include "ports.h"
-#include "timer.h"
-
-// Various objects
-#include "payload.h"
-
-// Modules
-#include "sclock.h"
-#include "radio.h"
-#include "led.h"
-#include "utils.h"
+#include "init.h"       // only used for SetupADC() for bemf
 #include "battery.h"
+#include "interrupts.h" // for address trap
+#include "cmd.h"
+#include "motor_ctrl.h"
+#include "led.h"
+#include "sclock.h"
+
 #include "spi_controller.h"
 #include "ppool.h"
+#include "radio.h"
 
-// Devices
-#include "gyro.h"
 #include "dfmem.h"
 #include "ovcam.h"
-#include "xl.h"
-#include "motor_ctrl.h"
 #include "cam.h"
+#include "gyro.h"
+
 
 int main(void) {
 
@@ -73,51 +65,40 @@ int main(void) {
 
     /* Initialization */
     SetupClock();
-    SwitchClocks();
     SetupPorts();
     batSetup();
+    cmdSetup();
+    mcSetup();
     SetupADC();
+    SwitchClocks();
+    sclockSetup();
 
     spicSetup();
     ppoolInit();
-    radioInit(40, 10);   // tx_queue = 40, rx_queue = 10
+    radioInit(40, 10);
     radioSetChannel(0x16);
     radioSetSrcPanID(0x1100);
     radioSetSrcAddr(0x1102);
 
-    mcSetup();
-    sclockSetup();
-
-    gyroSetup();
     dfmemSetup();
-    // ovcamSetup before xlSetup!
     ovcamSetup();
     camSetup();
-    xlSetup();
+    gyroSetup();
 
-    cmdSetup();
-
-    /* Boot-up sequence */
-    for (i = 0; i < 6; i++) {
-        LED_GREEN = ~LED_GREEN;
-        delay_ms(50);
-        LED_RED = ~LED_RED;
-        delay_ms(50);
-        LED_ORANGE = ~LED_ORANGE;
-        delay_ms(50);
+    for (i = 0; i < 6; i++)
+    {
+        LED_GREEN   = ~LED_GREEN;   delay_ms(50);
+        LED_RED     = ~LED_RED;     delay_ms(50);
+        LED_ORANGE  = ~LED_ORANGE;  delay_ms(50);
     }
-
-    LED_GREEN = 0;
-    LED_RED = 0;
-    LED_ORANGE = 0;
+    LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 
     camStart();
 
     /* Program */
-    while(1) {
-
+    while(1)
+    {
         cmdHandleRadioRxBuffer();
         radioProcess();
-
     }
 }

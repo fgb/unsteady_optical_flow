@@ -143,7 +143,7 @@ def main():
     np.savez(root + '_data.npz', dcval=dcval, sample=sample, bemf=bemf, \
              gyro=gyro, gyro_ts=gyro_ts, rows=rows, rows_num=rows_num,  \
                                                          rows_ts=rows_ts)
-    print('I: Arrays saved. Done.')
+    print('I: Arrays saved.')
 
     # Save files
     #np.savetxt(root + '_timestamp_data.txt', timestamp_data)
