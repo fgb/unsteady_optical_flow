@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011, Regents of the University of California
+ * Copyright (c) 2010-2012, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
  * Revisions:
  *  Stanley S. Baek                 2010-7-8    Initial release
  *  w/Fernando L. Garcia Bermudez   2011-3-4    Adaptation to fgb codebase
+ *  Humphrey Hu                     2012        Adaptation to latest radio.
  *
  */
 
@@ -87,9 +88,9 @@ int main(void) {
 
     for (i = 0; i < 6; i++)
     {
-        LED_GREEN   = ~LED_GREEN;   delay_ms(50);
-        LED_RED     = ~LED_RED;     delay_ms(50);
-        LED_ORANGE  = ~LED_ORANGE;  delay_ms(50);
+        LED_GREEN  = ~LED_GREEN;  delay_ms(50);
+        LED_RED    = ~LED_RED;    delay_ms(50);
+        LED_ORANGE = ~LED_ORANGE; delay_ms(50);
     }
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 
