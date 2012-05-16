@@ -68,14 +68,10 @@
 #define CMD_GET_LINES               3
 #define CMD_RECORD_SENSOR_DUMP      4
 #define CMD_GET_MEM_CONTENTS        5
-
 #define CMD_RUN_GYRO_CALIB          0x0d
 #define CMD_GET_GYRO_CALIB_PARAM    0x0e
-#define CMD_ECHO                    0x0f
-#define CMD_RUN_RADIO_TEST          0x10
 
-
-/* Declarations */
+/* Camera */
 #define IM_COLS                     160
 #define IM_ROWS                     120
 #define IM_ROWS_START               0
@@ -83,51 +79,47 @@
 #define VID_ROWS                    13
 #define VID_COLS                    18
 #define VID_FRAMES                  85
+
+/* Memory */
 #define MEM_PAGES                   100
 #define MEM_PAGESIZE                528
-
 #define MEM_DATAPOINT_SIZE          176
-
-/* A datapoint is saved upon completion of a camera row capture. It contains:
- *      sample - The datapoint number (starting from 0)
- *      timestamp - The system time in milliseconds corresponding to row capture completion
- *      bemf - The main motor back EMF reading
- *      gyro - Raw gyro values
- *      row_num - Physical row number (0 to IM_ROWS)
- *      row - Serialized captured row data
- */
- union {
-    struct {                                    // Total: 176
-        unsigned int  sample;                   // (2)
-        unsigned int  bemf;                     // (2)
-        unsigned char gyro[3*sizeof(int)];      // 2*3 = (6)
-        unsigned int  gyro_timestamp;           // (2)
-        unsigned int  row_num;                  // (2)
-        unsigned int  row_timestamp;            // (2)
-        unsigned char row[IM_COLS];             // IM_COLS = (160)
-    };
-    unsigned char contents[MEM_DATAPOINT_SIZE];
-} data;
-
-typedef union {
-    float fval;
-    unsigned long lval;
-    short sval[2];
-    unsigned char cval[4];
-} uByte4;
-
-typedef union {
-    unsigned short sval;
-    unsigned char cval[2];
-} uByte2;
-
-// use an array of function pointer to avoid a number of case statements
-void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char, unsigned char*);
 
 
 /*-----------------------------------------------------------------------------
- *          Declaration of static functions
+ *          Private declarations
 -----------------------------------------------------------------------------*/
+
+void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char, unsigned char*);
+
+// A datapoint is saved upon completion of a camera row capture.
+//
+// It contains:
+//  sample  : datapoint number (starting from 0)
+//  row     : serialized captured row data
+//  row_num : physical row number (0 to IM_ROWS)
+//  row_ts  : system time when row capture completes [ms]
+//  gyro    : raw gyro values
+//  gyro_ts : system time when gyro capture completes [ms]
+//  bemf    : main motor Back-EMF reading
+union {
+    struct {
+        unsigned int  sample;                   // (2)
+        unsigned char row[IM_COLS];             // (160)
+        unsigned int  row_num;                  // (2)
+        unsigned int  row_ts;                   // (2)
+        unsigned char gyro[3*sizeof(int)];      // (6)
+        unsigned int  gyro_ts;                  // (2)
+        unsigned int  bemf;                     // (2)
+    };
+    unsigned char contents[MEM_DATAPOINT_SIZE]; // (176)
+} data;
+
+
+/*----------------------------------------------------------------------------
+ *          Declaration of private functions
+ ---------------------------------------------------------------------------*/
+
 static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdGetMemContents(unsigned char status, unsigned char length, unsigned char *frame);
@@ -233,7 +225,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             //data.vsync[0] = OVCAM_VSYNC;
             //ovcamGetRow(data.rows);
             //data.vsync[1] = OVCAM_VSYNC;
-            //data.timestamp = sclockGetGlobalMillis();
+            //data.ts = sclockGetGlobalMillis();
             //data.bemf = ADC1BUF0;
             //gyroGetXYZ(data.gyro);
             //data.sample = samples - count;
@@ -247,15 +239,15 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
                 row_buff = camGetRow();
                 memcpy(data.row, row_buff->pixels, IM_COLS);
                 data.row_num = row_buff->row_num;
-                data.row_timestamp = (unsigned int) (row_buff->timestamp & 0x00FF);
+                data.row_ts = (unsigned int) (row_buff->timestamp & 0x00FF);
             } else {
                 memset(data.row, 0, IM_COLS);
-                data.row_timestamp = 0;
+                data.row_ts = 0;
             }
 
             // Read gyro values
             gyroGetXYZ(data.gyro);
-            data.gyro_timestamp = (unsigned int) (sclockGetGlobalMillis() & 0x00FF);
+            data.gyro_ts = (unsigned int) (sclockGetGlobalMillis() & 0x00FF);
             data.bemf = ADC1BUF0;
 
 
