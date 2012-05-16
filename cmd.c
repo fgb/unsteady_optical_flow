@@ -171,11 +171,8 @@ void cmdHandleRadioRxBuffer(void)
  *          Private functions
 -----------------------------------------------------------------------------*/
 
-static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigned char *frame) {
-
-    //while(!U2STAbits.URXDA);
-    //argument = U2RXREG;
-
+static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigned char *frame)
+{
     unsigned char chr_test[4];
     float *duty_cycle = (float*)chr_test;
 
@@ -186,9 +183,6 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigne
 
     // Update duty cycle - Main drive (PWM1L)
     mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
-
-    //while(U2STAbits.UTXBF);
-    //U2TXREG = argument;
 }
 
 static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsigned char *frame) {
