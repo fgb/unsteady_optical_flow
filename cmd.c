@@ -30,8 +30,8 @@
 #include <stdlib.h>
 
 
-// Commands
-#define MAX_CMD_FUNC_SIZE           0x11
+/* Commands */
+#define MAX_CMD_FUNC_SIZE           0xFF
 
 #define CMD_SET_MOTOR_SPEED         0
 #define CMD_GET_PICTURE             1
@@ -102,38 +102,35 @@ void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char, unsigned char*
 /*-----------------------------------------------------------------------------
  *          Declaration of static functions
 -----------------------------------------------------------------------------*/
-static void cmdNop(unsigned char status, unsigned char length, unsigned char *frame);
-static void cmdEcho(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdGetMemContents(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdRunGyroCalib(unsigned char status, unsigned char length, unsigned char *frame);
 static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, unsigned char *frame);
-static void cmdRunRadioTest(unsigned char status, unsigned char length, unsigned char *frame);
+
 
 /*-----------------------------------------------------------------------------
  *          Public functions
 -----------------------------------------------------------------------------*/
-void cmdSetup(void) {
 
+void cmdSetup(void)
+{
     unsigned int i;
 
     // initialize the array of func pointers with Nop()
     for(i = 0; i < MAX_CMD_FUNC_SIZE; ++i) {
-        cmd_func[i] = &cmdNop;
+        cmd_func[i] = NULL;
     }
 
-    cmd_func[CMD_ECHO] = &cmdEcho;
     cmd_func[CMD_SET_MOTOR_SPEED] = &cmdSetMotorSpeed;
     cmd_func[CMD_RECORD_SENSOR_DUMP] = &cmdRecordSensorDump;
     cmd_func[CMD_GET_MEM_CONTENTS] = &cmdGetMemContents;
     cmd_func[CMD_RUN_GYRO_CALIB] = &cmdRunGyroCalib;
     cmd_func[CMD_GET_GYRO_CALIB_PARAM] = &cmdGetGyroCalibParam;
-    cmd_func[CMD_RUN_RADIO_TEST] = &cmdRunRadioTest;
 }
 
-void cmdHandleRadioRxBuffer(void) {
-
+void cmdHandleRadioRxBuffer(void)
+{
     MacPacket packet;
     Payload pld;
     unsigned char command, status;
@@ -149,15 +146,11 @@ void cmdHandleRadioRxBuffer(void) {
     }
 
     return;
-
 }
 
 
 /*-----------------------------------------------------------------------------
- * ----------------------------------------------------------------------------
- * The functions below are intended for internal use, i.e., private methods.
- * Users are recommended to use functions defined above.
- * ----------------------------------------------------------------------------
+ *          Private functions
 -----------------------------------------------------------------------------*/
 
 static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigned char *frame) {
@@ -347,58 +340,4 @@ static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, uns
     paySetStatus(pld, 0);
 
     while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
-}
-
-static void cmdRunRadioTest(unsigned char status, unsigned char length, unsigned char *frame) {
-
-    MacPacket packet;
-    Payload pld;
-    unsigned int i, num_runs, size;
-
-    num_runs = *((unsigned int*) frame);
-    size = *((unsigned int*) frame + 1);
-    i = 0;
-    while(i < num_runs) {
-
-        radioProcess();
-        packet = radioRequestPacket(size);
-        if(packet == NULL) { continue; }
-
-        macSetDestAddr(packet, DEST_ADDR);
-        macSetDestPan(packet, PAN_ID);
-        i++;
-
-        pld = macGetPayload(packet);
-        paySetType(pld, 0x10);
-        paySetData(pld, 2, (unsigned char*)&i);
-        while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
-
-    }
-
-}
-
-/*-----------------------------------------------------------------------------
- *          AUX functions
------------------------------------------------------------------------------*/
-static void cmdEcho(unsigned char status, unsigned char length, unsigned char *frame) {
-
-    MacPacket packet;
-    Payload pld;
-
-    packet = radioRequestPacket(length);
-    if(packet == NULL) { return; }
-    macSetDestAddr(packet, DEST_ADDR);
-    macSetDestPan(packet, PAN_ID);
-
-    pld = macGetPayload(packet);
-    paySetData(pld, length, frame);
-    paySetType(pld, CMD_ECHO);
-    paySetStatus(pld, status);
-
-    while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
-
-}
-
-static void cmdNop(unsigned char status, unsigned char length, unsigned char *frame) {
-    Nop();
 }
