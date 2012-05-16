@@ -40,28 +40,22 @@
  *
  */
 
-//#include "init_default.h"
-//#include "init.h"
-//#include "interrupts.h"
 #include "cmd.h"
-#include "ports.h"
+#include "motor_ctrl.h"
 #include "led.h"
-#include "utils.h"
+#include "sclock.h"
+
+#include "payload.h"
+#include "radio.h"
 
 #include "dfmem.h"
 #include "ovcam.h"
-#include "sclock.h"
+#include "cam.h"
 #include "gyro.h"
 
-//#include "pwm.h"
-#include "motor_ctrl.h"
-
-#include "radio.h"
-#include "payload.h"
-#include "cam.h"
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 
 
 /* Commands */
