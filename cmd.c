@@ -46,6 +46,7 @@
 #include "sclock.h"
 
 #include "payload.h"
+#include "radio_settings.h"
 #include "radio.h"
 
 #include "dfmem.h"
@@ -73,9 +74,6 @@
 #define CMD_ECHO                    0x0f
 #define CMD_RUN_RADIO_TEST          0x10
 
-#define PAN_ID                      0x1100
-#define DEST_ADDR                   0x1101
-#define SRC_ADDR                    0x1102
 
 /* Declarations */
 #define IM_COLS                     160
