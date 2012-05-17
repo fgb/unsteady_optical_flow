@@ -60,16 +60,12 @@
 
 
 /* Commands */
-#define MAX_CMD_FUNC_SIZE           0xFF
-
 #define CMD_SET_MOTOR_SPEED         0
-#define CMD_GET_PICTURE             1
-#define CMD_GET_VIDEO               2
-#define CMD_GET_LINES               3
 #define CMD_RECORD_SENSOR_DUMP      4
 #define CMD_GET_MEM_CONTENTS        5
 #define CMD_RUN_GYRO_CALIB          0x0d
 #define CMD_GET_GYRO_CALIB_PARAM    0x0e
+#define MAX_CMD_FUNC_SIZE           0xFF
 
 /* Camera */
 #define IM_COLS                     160

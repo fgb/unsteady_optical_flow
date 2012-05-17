@@ -51,14 +51,10 @@ from pymageproc import radio, payload
 
 # Commands
 CMD_SET_MOTOR_SPEED      = 0
-CMD_GET_PICTURE          = 1
-CMD_GET_VIDEO            = 2
-CMD_GET_LINES            = 3
 CMD_RECORD_SENSOR_DUMP   = 4
 CMD_GET_MEM_CONTENTS     = 5
 CMD_RUN_GYRO_CALIB       = 0x0d
 CMD_GET_GYRO_CALIB_PARAM = 0x0e
-CMD_ECHO                 = 0x0f
 
 def main():
     global datasets, data_rx, count, dump, sample, bemf, gyro, gyro_ts,   \
