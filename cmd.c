@@ -192,25 +192,22 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
     unsigned long next_sample_time = 0;
     static unsigned char buf_index = 1;
 
-
-    // Dump sensor data to memory
-    LED_ORANGE = 1;
-
     CamRow row_buff;
 
-    next_sample_time = sclockGetGlobalMillis();
-    do {
-
-        if (sclockGetGlobalMillis() > next_sample_time) {
     // Erase as many memory sectors as needed
     // TODO (fgb) : adapt to any number of samples, not only multiples of 3
     LED_GREEN = 0; LED_RED = 1; LED_ORANGE = 0;
     do { dfmemEraseSector(sector); sector += 0x80; } while (sector < max_page);
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 
+    // Dump sensor data to memory
+    LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 1;
+    next_sample_time = sclockGetLocalTicks();
+    do
+    {
+        if (sclockGetLocalTicks() > next_sample_time)
+        {
             // Capture sensor datapoint
-            data.sample = samples - count;
-
             if (camHasNewRow())
             {
                 row_buff = camGetRow();
@@ -222,8 +219,9 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
                 data.row_ts = 0;
             }
             gyroGetXYZ(data.gyro);
-            data.gyro_ts = (unsigned int) (sclockGetGlobalMillis() & 0x00FF);
+            data.gyro_ts = (unsigned int) (sclockGetLocalTicks() & 0x00FF);
             data.bemf = ADC1BUF0;
+            data.sample = samples - count;
 
 
             // Send datapoint to memory buffer
@@ -241,7 +239,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             // Stop motor while still sampling, to capture final glide/crash
             if (count == samples/2) { mcSetDutyCycle(MC_CHANNEL_PWM1, 0); }
 
-            next_sample_time = next_sample_time + 1;
+            next_sample_time += millis_factor; // 1 KHz sampling
             count--;
         }
     } while (count);
