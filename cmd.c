@@ -182,11 +182,14 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigne
 
 static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsigned char *frame) {
 
-    unsigned int samples = frame[0] + (frame[1] << 8), count = samples;
+    unsigned int samples = frame[0] + (frame[1] << 8),
+                 count = samples,
+                 mem_byte = 0,
+                 mem_page = 0x080,
+                 max_page = mem_page + samples/3 + 0x80,
+                 sector = mem_page,
+                 millis_factor = sclockGetMillisFactor();
     unsigned long next_sample_time = 0;
-
-    unsigned int mem_byte = 0;
-    unsigned int mem_page = 0x080, max_page = mem_page + samples/3 + 0x80, sector = mem_page;
     static unsigned char buf_index = 1;
 
     // Erase as many memory sectors as needed
@@ -248,12 +251,12 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdGetMemContents(unsigned char status, unsigned char length, unsigned char *frame) {
-
-    unsigned int start_page = frame[0] + (frame[1] << 8);
-    unsigned int end_page = frame[2] + (frame[3] << 8);
-    unsigned int tx_data_size = frame[4] + (frame[5] << 8);
-    unsigned int page, j;
+static void cmdGetMemContents(unsigned char status, unsigned char length, unsigned char *frame)
+{
+    unsigned int start_page   = frame[0] + (frame[1] << 8),
+                 end_page     = frame[2] + (frame[3] << 8),
+                 tx_data_size = frame[4] + (frame[5] << 8),
+                 page, j;
     unsigned char count = 0;
 
     Payload pld;
