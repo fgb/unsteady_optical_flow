@@ -192,14 +192,6 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
     unsigned long next_sample_time = 0;
     static unsigned char buf_index = 1;
 
-    // Erase as many memory sectors as needed
-    // TODO (fgb) : fix to adapt to any number of samples, not only multiples of 3
-    LED_RED = 1;
-    while (sector < max_page) {
-        dfmemEraseSector(sector);
-        sector += 0x80;
-    }
-    LED_RED = 0;
 
     // Dump sensor data to memory
     LED_ORANGE = 1;
@@ -210,6 +202,11 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
     do {
 
         if (sclockGetGlobalMillis() > next_sample_time) {
+    // Erase as many memory sectors as needed
+    // TODO (fgb) : adapt to any number of samples, not only multiples of 3
+    LED_GREEN = 0; LED_RED = 1; LED_ORANGE = 0;
+    do { dfmemEraseSector(sector); sector += 0x80; } while (sector < max_page);
+    LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 
             // Capture sensor datapoint
             data.sample = samples - count;
