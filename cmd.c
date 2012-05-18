@@ -43,6 +43,7 @@
 #include "cmd.h"
 #include "motor_ctrl.h"
 #include "led.h"
+#include "utils.h"
 #include "sclock.h"
 
 #include "payload.h"
@@ -50,7 +51,6 @@
 #include "radio.h"
 
 #include "dfmem.h"
-#include "ovcam.h"
 #include "cam.h"
 #include "gyro.h"
 
