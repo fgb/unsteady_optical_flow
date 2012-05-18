@@ -77,10 +77,9 @@
 #define VID_FRAMES                  85
 
 /* Memory */
-#define MEM_PAGES                   100
-#define MEM_PAGESIZE                528
 #define MEM_DATAPOINT_SIZE          176
-
+#define MEM_PAGE_SIZE               528
+#define MEM_PAGES                   100
 
 /*-----------------------------------------------------------------------------
  *          Private declarations
@@ -131,8 +130,8 @@ void cmdSetup(void)
 {
     unsigned int i;
 
-    // initialize the array of func pointers with Nop()
-    for(i = 0; i < MAX_CMD_FUNC_SIZE; ++i) {
+    for( i = 0; i < MAX_CMD_FUNC_SIZE; ++i )
+    {
         cmd_func[i] = NULL;
     }
 
@@ -167,6 +166,7 @@ void cmdHandleRadioRxBuffer(void)
  *          Private functions
 -----------------------------------------------------------------------------*/
 
+// Update duty cycle - Main drive (PWM1L)
 static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigned char *frame)
 {
     unsigned char chr_test[4];
@@ -177,7 +177,6 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigne
     chr_test[2] = frame[2];
     chr_test[3] = frame[3];
 
-    // Update duty cycle - Main drive (PWM1L)
     mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
 }
 
@@ -223,19 +222,16 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             // NEW CODE
             data.sample = samples - count;
 
-            // Check if a row is available
-            // If no new row is available, clear respective fields
-            if(camHasNewRow()) {
+            if (camHasNewRow())
+            {
                 row_buff = camGetRow();
                 memcpy(data.row, row_buff->pixels, IM_COLS);
                 data.row_num = row_buff->row_num;
                 data.row_ts = (unsigned int) (row_buff->timestamp & 0x00FF);
-            } else {
+            } else { // If no new row is available, clear relevant fields
                 memset(data.row, 0, IM_COLS);
                 data.row_ts = 0;
             }
-
-            // Read gyro values
             gyroGetXYZ(data.gyro);
             data.gyro_ts = (unsigned int) (sclockGetGlobalMillis() & 0x00FF);
             data.bemf = ADC1BUF0;
@@ -246,7 +242,8 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             mem_byte += MEM_DATAPOINT_SIZE;
 
             // If buffer full, write it to memory
-            if (mem_byte + MEM_DATAPOINT_SIZE > MEM_PAGESIZE) {
+            if (mem_byte + MEM_DATAPOINT_SIZE > MEM_PAGE_SIZE)
+            {
                 dfmemWriteBuffer2MemoryNoErase(mem_page++, buf_index);
                 buf_index ^= 0x01;  // toggle between buffer 0 and 1
                 mem_byte = 0;
@@ -259,7 +256,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             count--;
         }
     } while (count);
-    LED_ORANGE = 0;
+    LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
 static void cmdGetMemContents(unsigned char status, unsigned char length, unsigned char *frame) {
@@ -282,58 +279,50 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
     Payload pld;
     MacPacket packet;
 
-    LED_ORANGE = 0;
-    LED_GREEN = 1; // Signal start of transfer
-    LED_RED = 0;
-
     // Send back memory contents
-    for (page = start_page; page < end_page; ++page) {
+    LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 0;
+
+    for ( page = start_page; page < end_page; ++page )
+    {
         j = 0;
         while (j + tx_data_size <= 528) {
             radioProcess();
             packet = radioRequestPacket(tx_data_size);
-            if(packet == NULL) {
-                continue;
-            }
-            macSetDestAddr(packet, DEST_ADDR);
+            if(packet == NULL) { continue; }
             macSetDestPan(packet, PAN_ID);
+            macSetDestAddr(packet, DEST_ADDR);
             pld = macGetPayload(packet);
             dfmemRead(page, j, tx_data_size, payGetData(pld));
             paySetStatus(pld, count++);
             paySetType(pld, CMD_GET_MEM_CONTENTS);
-            while(!radioEnqueueTxPacket(packet)) {
-                radioProcess();
-            }
+            while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
             j += tx_data_size;
         }
 
-        if ((page >> 7) & 0x1) {
-            LED_ORANGE = ~LED_ORANGE;
-            LED_GREEN = ~LED_GREEN;
+        if ((page >> 7) & 0x1)
+        {
+            LED_GREEN = ~LED_GREEN; LED_ORANGE = ~LED_ORANGE;
         }
 
         delay_ms(20);
     }
 
-    // Signal end of transfer
     LED_GREEN = 1; LED_RED = 1; LED_ORANGE = 1;
     delay_ms(2000);
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdRunGyroCalib(unsigned char status, unsigned char length, unsigned char *frame) {
-
+static void cmdRunGyroCalib(unsigned char status, unsigned char length, unsigned char *frame)
+{
     unsigned int count = frame[0] + (frame[1] << 8);
 
-    LED_ORANGE = 1;
-    LED_GREEN = 1;
-    LED_RED = 0;
+    LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 1;
     gyroRunCalib(count);
-    LED_ORANGE = 0;
-    LED_GREEN = 0;
+    LED_GREEN = 0; LED_ORANGE = 0;
 }
 
-static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, unsigned char *frame) {
+static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, unsigned char *frame)
+{
     Payload pld;
     MacPacket packet;
 
