@@ -209,17 +209,6 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
         if (sclockGetGlobalMillis() > next_sample_time) {
 
             // Capture sensor datapoint
-
-            // OLD CODE
-            //data.vsync[0] = OVCAM_VSYNC;
-            //ovcamGetRow(data.rows);
-            //data.vsync[1] = OVCAM_VSYNC;
-            //data.ts = sclockGetGlobalMillis();
-            //data.bemf = ADC1BUF0;
-            //gyroGetXYZ(data.gyro);
-            //data.sample = samples - count;
-
-            // NEW CODE
             data.sample = samples - count;
 
             if (camHasNewRow())
@@ -266,15 +255,6 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
     unsigned int tx_data_size = frame[4] + (frame[5] << 8);
     unsigned int page, j;
     unsigned char count = 0;
-
-    //// Send back memory details
-    //while(U2STAbits.UTXBF);
-    //U2TXREG = MEM_PAGES;
-    //while(U2STAbits.UTXBF);
-    //U2TXREG = sizeof(data);
-
-    // Stopping motor in case it's still running
-    mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
     Payload pld;
     MacPacket packet;
