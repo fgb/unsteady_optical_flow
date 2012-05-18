@@ -264,7 +264,8 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
     for ( page = start_page; page < end_page; ++page )
     {
         j = 0;
-        while (j + tx_data_size <= 528) {
+        do
+        {
             radioProcess();
             packet = radioRequestPacket(tx_data_size);
             if(packet == NULL) { continue; }
@@ -276,7 +277,7 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
             paySetType(pld, CMD_GET_MEM_CONTENTS);
             while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
             j += tx_data_size;
-        }
+        } while (j + tx_data_size <= MEM_PAGE_SIZE);
 
         if ((page >> 7) & 0x1)
         {
