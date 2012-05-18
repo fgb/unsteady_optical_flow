@@ -216,6 +216,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
                 data.row_ts = (unsigned int) (row_buff->timestamp & 0x00FF);
             } else { // If no new row is available, clear relevant fields
                 memset(data.row, 0, IM_COLS);
+                data.row_num = 0xFFFF;
                 data.row_ts = 0;
             }
             gyroGetXYZ(data.gyro);
