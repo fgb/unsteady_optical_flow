@@ -41,7 +41,6 @@
 #                                               and slight restructuring.
 #
 # Notes:
-#  - Optional arguments: serial port, baud rate, path, dcval, datasets, name
 #  - This file is derived from xboptflow.py, by Stanley S. Baek.
 #
 
@@ -140,14 +139,6 @@ def main():
              gyro=gyro, gyro_ts=gyro_ts, rows=rows, rows_num=rows_num,  \
                                                          rows_ts=rows_ts)
     print('I: Arrays saved.')
-
-    # Save files
-    #np.savetxt(root + '_timestamp_data.txt', timestamp_data)
-    #np.savetxt(root + '_gyro_calib.txt', gyro_calib)
-    #np.savetxt(root + '_gyro_data.txt', gyro_data)
-    #np.savetxt(root + '_bemf_data.txt', bemf_data)
-    #np.savetxt(root + '_rows_data.txt', rows_data)
-    #print('I: Files saved!')
 
     #*** Visualize sensor dump
 
