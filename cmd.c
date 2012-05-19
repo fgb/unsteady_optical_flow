@@ -100,12 +100,12 @@ void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char, unsigned char*
 union {
     struct {
         unsigned int  sample;                   // (2)
-        unsigned char row[IM_COLS];             // (160)
-        unsigned int  row_num;                  // (2)
-        unsigned int  row_ts;                   // (2)
+        unsigned int  bemf;                     // (2)
         unsigned char gyro[3*sizeof(int)];      // (6)
         unsigned int  gyro_ts;                  // (2)
-        unsigned int  bemf;                     // (2)
+        unsigned int  row_num;                  // (2)
+        unsigned int  row_ts;                   // (2)
+        unsigned char row[IM_COLS];             // (160)
     };
     unsigned char contents[MEM_DATAPOINT_SIZE]; // (176)
 } data;
@@ -223,7 +223,6 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             data.gyro_ts = (unsigned int) (sclockGetLocalTicks() & 0x00FF);
             data.bemf = ADC1BUF0;
             data.sample = samples - count;
-
 
             // Send datapoint to memory buffer
             dfmemWriteBuffer(data.contents, MEM_DATAPOINT_SIZE, mem_byte, buf_index);

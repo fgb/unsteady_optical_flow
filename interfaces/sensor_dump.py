@@ -194,19 +194,23 @@ def received(packet):
         if count < datasets:
             index = status % 4
             if index == 0:
-                sample[count] = struct.unpack('<H', data[:2])
-                bemf[count] = struct.unpack('<H', data[2:4])
-                gyro[count,:] = struct.unpack('<3h', data[4:10])
-                gyro_ts[count] = struct.unpack('<H', data[10:12])
-                rows_num[count] = struct.unpack('<H', data[12:14])
-                rows_ts[count] = struct.unpack('<H', data[14:16])
-                rows[count,:28] = np.array(struct.unpack('<28B', data[16:44]))
+                sample[count]       = struct.unpack('<H',  data[:2])     # (2)
+                bemf[count]         = struct.unpack('<H',  data[2:4])    # (2)
+                gyro[count,:]       = struct.unpack('<3h', data[4:10])   # (6)
+                gyro_ts[count]      = struct.unpack('<H',  data[10:12])  # (2)
+                rows_num[count]     = struct.unpack('<H',  data[12:14])  # (2)
+                rows_ts[count]      = struct.unpack('<H',  data[14:16])  # (2)
+                rows[count,:28]     = np.array(struct.unpack('<28B', \
+                                                           data[16:44])) # (160)
             elif index == 1:
-                rows[count,28:72] = np.array(struct.unpack('44B', data[0:44]))
+                rows[count,28:72]   = np.array(struct.unpack('<44B', \
+                                                           data[:44]))
             elif index == 2:
-                rows[count,72:116] = np.array(struct.unpack('44B', data[0:44]))
+                rows[count,72:116]  = np.array(struct.unpack('<44B', \
+                                                            data[:44]))
             elif index == 3:
-                rows[count, 116:160] = np.array(struct.unpack('44B', data[0:44]))
+                rows[count,116:160] = np.array(struct.unpack('<44B', \
+                                                            data[:44]))
                 count += 1
         elif count == datasets:
             print('...all samples were received.')

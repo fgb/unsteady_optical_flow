@@ -7,6 +7,7 @@
 #ifndef __RADIO_SETTINGS_H
 #define __RADIO_SETTINGS_H
 
+
 #define MY_CHAN         0x16
 
 #define PAN_ID          0x1100
@@ -15,5 +16,6 @@
 
 #define TXPQ_MAX_SIZE   40
 #define RXPQ_MAX_SIZE   10
+
 
 #endif //__RADIO_SETTINGS_H
