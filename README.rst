@@ -1,10 +1,12 @@
 All code licensed under the 3-clause modified-BSD license.
 
-*unsteady_optical_flow*
+=================================
+Optical flow on an unsteady robot
+=================================
 
 Description:
- Image processing and control of an unsteady robot. This code is
- primarily a way to get unsteady robot data for off-line processing.
+ This code is primarily a way to get unsteady robot data for off-line
+ processing.
 
 Download code:
  https://github.com/fgb/unsteady_optical_flow
