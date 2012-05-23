@@ -58,25 +58,17 @@
 
 
 /* Commands */
-/* Camera */
-#define IM_COLS                     160
-#define IM_ROWS                     120
-#define IM_ROWS_START               0
-#define IM_ROWS_QUANT               1
-#define VID_ROWS                    13
-#define VID_COLS                    18
-#define VID_FRAMES                  85
-
-/* Memory */
-#define MEM_DATAPOINT_SIZE          176
-#define MEM_PAGE_SIZE               528
-#define MEM_PAGES                   100
 #define CMD_SET_MOTOR_SPEED      0
 #define CMD_RECORD_SENSOR_DUMP   4
 #define CMD_GET_MEM_CONTENTS     5
 #define CMD_RUN_GYRO_CALIB       0x0d
 #define CMD_GET_GYRO_CALIB_PARAM 0x0e
 #define MAX_CMD_FUNC_SIZE        0xFF
+
+/* Capture Parameters */
+#define IM_COLS                  152
+#define SAMPLE_SIZE              176
+#define MEM_PAGE_SIZE            528
 
 
 /*-----------------------------------------------------------------------------
@@ -106,8 +98,8 @@ union {
         unsigned int  row_ts;                   // (2)
         unsigned char row[IM_COLS];             // (160)
     };
-    unsigned char contents[MEM_DATAPOINT_SIZE]; // (176)
-} data;
+    unsigned char contents[SAMPLE_SIZE];    // (176) total
+} sample;
 
 
 /*----------------------------------------------------------------------------
@@ -185,16 +177,16 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length,
     mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
 }
 
-    unsigned int samples = frame[0] + (frame[1] << 8),
-                 count = samples,
-                 mem_byte = 0,
-                 mem_page = 0x080,
-                 max_page = mem_page + samples/3 + 0x80,
-                 sector = mem_page,
-                 millis_factor = sclockGetMillisFactor();
 static void cmdRecordSensorDump (unsigned char status, unsigned char length,
                                  unsigned char *frame)
 {
+    unsigned int  samples          = frame[0] + (frame[1] << 8),
+                  count            = samples,
+                  mem_byte         = 0,
+                  mem_page         = 0x80,
+                  mem_page_max     = mem_page + samples/3 + 0x80,
+                  mem_sector       = mem_page,
+                  millis_factor    = sclockGetMillisFactor();
     unsigned long next_sample_time = 0;
     static unsigned char buf_index = 1;
 
@@ -203,7 +195,13 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
     // Erase as many memory sectors as needed
     // TODO (fgb) : adapt to any number of samples, not only multiples of 3
     LED_GREEN = 0; LED_RED = 1; LED_ORANGE = 0;
-    do { dfmemEraseSector(sector); sector += 0x80; } while (sector < max_page);
+
+    do
+    {
+        dfmemEraseSector(mem_sector);
+        mem_sector += 0x80;
+    } while (mem_sector < mem_page_max);
+
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 
     // Dump sensor data to memory
@@ -231,12 +229,13 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
             data.bemf = ADC1BUF0;
             data.sample = samples - count;
 
-            // Send datapoint to memory buffer
-            dfmemWriteBuffer(data.contents, MEM_DATAPOINT_SIZE, mem_byte, buf_index);
-            mem_byte += MEM_DATAPOINT_SIZE;
+            // Send sample to memory buffer
+            dfmemWriteBuffer(sample.contents, SAMPLE_SIZE, mem_byte,
+                             buf_index);
+            mem_byte += SAMPLE_SIZE;
 
             // If buffer full, write it to memory
-            if (mem_byte + MEM_DATAPOINT_SIZE > MEM_PAGE_SIZE)
+            if (mem_byte + SAMPLE_SIZE > MEM_PAGE_SIZE)
             {
                 dfmemWriteBuffer2MemoryNoErase(mem_page++, buf_index);
                 buf_index ^= 0x01;  // toggle between buffer 0 and 1
