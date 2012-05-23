@@ -49,12 +49,12 @@ import numpy as np, matplotlib.pyplot as plt, Image
 from pymageproc import radio, payload
 
 # Global Declarations
+data = {}
 cmd  = {}
 
 
 def main():
-    global datasets, data_rx, count, dump, sample, bemf, gyro, gyro_ts,   \
-                                                    rows, rows_num, rows_ts
+
     # Execution flags
     do_run_robot = 1
 
@@ -82,24 +82,22 @@ def main():
     cmd['GET_GYRO_CALIB_PARAM'] = 0x0e
 
     # Data
-    datasets = 3000 # (max is 0xFFFF, multiple of 3)
-    data_rx  = 0
-    count    = 0
-    dump     = []
-    sample   = np.zeros((datasets,1), dtype=np.uint16)
-    bemf     = np.zeros((datasets,1), dtype=np.uint16)
-    gyro     = np.zeros((datasets,3), dtype=np.int16)
-    gyro_ts  = np.zeros((datasets,1), dtype=np.uint16)
-    rows     = np.zeros((datasets,160), dtype=np.uint8)
-    rows_num = np.zeros((datasets,1), dtype=np.uint16)
-    rows_ts  = np.zeros((datasets,1), dtype=np.uint16)
+    data['samples']    = 3000 # (max is 0xFFFF, multiple of 3)
+    data['packet_cnt'] = 0
+    data['sample_cnt'] = 0
+    data['dump']       = []
+    data['id']         = np.zeros((data['samples'], 1),   dtype=np.uint16)
+    data['bemf']       = np.zeros((data['samples'], 1),   dtype=np.uint16)
+    data['gyro_ts']    = np.zeros((data['samples'], 1),   dtype=np.uint32)
+    data['gyro']       = np.zeros((data['samples'], 3),   dtype=np.int16)
+    data['row_ts']     = np.zeros((data['samples'], 1),   dtype=np.uint32)
+    data['row_num']    = np.zeros((data['samples'], 1),   dtype=np.uint8)
+    data['row']        = np.zeros((data['samples'], 152), dtype=np.uint8)
+    data['dcval']      = 0.0
 
     # Gyro scaling factors
     GYRO_LSB2DEG = 0.0695652174  # 14.375 LSB/(deg/s)
     GYRO_LSB2RAD = 0.00121414209
-
-    # Motor
-    dcval = 0.0
 
     # Establish communication link
     wrl = radio.radio(port, baud, received)
@@ -116,11 +114,13 @@ def main():
 
         # Update duty cycle
         wrl.send(dest_addr, 0, cmd['SET_MOTOR_SPEED'],                      \
+                                            struct.pack('<f', data['dcval']))
         print('I: Setting motor to desired duty cycle...')
 
         # Request sensor dump to memory
         print('I: Requesting a sensor dump into memory...')
         wrl.send(dest_addr, 0, cmd['RECORD_SENSOR_DUMP'],                     \
+                                            struct.pack('<H', data['samples']))
         time.sleep(3)
 
         # Stop motor <-- done automatically halfway through sensor dump
@@ -132,15 +132,15 @@ def main():
     raw_input('Press any key to request memory read')
     print('I: Requesting memory contents...')
     wrl.send(dest_addr, 0, cmd['GET_MEM_CONTENTS'],
+        struct.pack('<3H', 0x80, 0x80 + int(np.ceil(data['samples']/3.0)), 44))
     time.sleep(0.5)
 
     raw_input('I: Press ENTER when data has been received...')
-    print('I: Total packets received: ' + str(data_rx) + ' including ' + str(count) + ' samples.')
+    print('I: Total packets received: ' + str(data['packet_cnt']) +          \
+                        ' including ' + str(data['sample_cnt']) + ' samples.')
 
-    # Save all variables for easy import
-    np.savez(root + '_data.npz', dcval=dcval, sample=sample, bemf=bemf, \
-             gyro=gyro, gyro_ts=gyro_ts, rows=rows, rows_num=rows_num,  \
-                                                         rows_ts=rows_ts)
+    # Save data to disk
+    np.savez(root + '_data.npz', data=data)
     print('I: Arrays saved.')
 
     #*** Visualize sensor dump
@@ -153,23 +153,23 @@ def main():
     #
     ## Gyro
     #plt.figure()
-    #plt.plot(t,gyro[:,0], t,gyro[:,1], t,gyro[:,2])
+    #plt.plot(t,data['gyro'][:,0], t,data['gyro'][:,1], t,data['gyro'][:,2])
     #
     ## Back-EMF
-    #V = 4.0 * np.array(1023.0 - bemf, dtype=float) / 1023.0
+    #V = 4.0 * np.array(1023.0 - data['bemf'], dtype=float) / 1023.0
     #plt.figure()
     #plt.plot(t,V)
     #
     ## Rows
-    #Image.fromarray(rows).show()
+    #Image.fromarray(data['row']).show()
     #
     ## Show plots
     #plt.show()
 
 def received(packet):
-    global data_rx, count, dump, sample, bemf, gyro, gyro_ts, rows, rows_num, \
-                                                                        rows_ts
-    data_rx += 1
+
+    data['packet_cnt'] += 1
+    cnt = data['sample_cnt']
 
     pld = payload.Payload(packet.get('rf_data'))
 
@@ -181,33 +181,34 @@ def received(packet):
     if (pkt_type == cmd['GET_GYRO_CALIB_PARAM']):
         gyro_calib = np.array(struct.unpack('<3f', pkt_data))
         print(gyro_calib)
-    elif (type == CMD_GET_MEM_CONTENTS):
-        if count < datasets:
+    elif (pkt_type == cmd['GET_MEM_CONTENTS']):
+        if cnt < data['samples']:
             index = pkt_status % 4
             if index == 0:
-                sample[count]       = struct.unpack('<H',  data[:2])     # (2)
-                bemf[count]         = struct.unpack('<H',  data[2:4])    # (2)
-                gyro[count,:]       = struct.unpack('<3h', data[4:10])   # (6)
-                gyro_ts[count]      = struct.unpack('<H',  data[10:12])  # (2)
-                rows_num[count]     = struct.unpack('<H',  data[12:14])  # (2)
-                rows_ts[count]      = struct.unpack('<H',  data[14:16])  # (2)
-                rows[count,:28]     = np.array(struct.unpack('<28B', \
-                                                           data[16:44])) # (160)
+                data['id'][cnt]        = struct.unpack('<H',  pkt_data[:2])
+                data['bemf'][cnt]      = struct.unpack('<H',  pkt_data[6:8])
+                data['gyro_ts'][cnt]   = struct.unpack('<L',  pkt_data[8:12])
+                data['gyro'][cnt,:]    = struct.unpack('<3h', pkt_data[12:18])
+                data['row_ts'][cnt]    = struct.unpack('<L',  pkt_data[18:22])
+                data['row_num'][cnt]   = struct.unpack('<B',  pkt_data[22:23])
+                data['row'][cnt,:20]   = np.array(struct.unpack('<20B',       \
+                                                              pkt_data[25:44]))
             elif index == 1:
-                rows[count,28:72]   = np.array(struct.unpack('<44B', \
-                                                           data[:44]))
+                data['row'][cnt,20:64]   = np.array(struct.unpack('<44B',     \
+                                                                pkt_data[:44]))
             elif index == 2:
-                rows[count,72:116]  = np.array(struct.unpack('<44B', \
-                                                            data[:44]))
+                data['row'][cnt,64:108]  = np.array(struct.unpack('<44B',     \
+                                                                pkt_data[:44]))
             elif index == 3:
-                rows[count,116:160] = np.array(struct.unpack('<44B', \
-                                                            data[:44]))
-                count += 1
-        elif count == datasets:
-            print('...all samples were received.')
+                data['row'][cnt,108:152] = np.array(struct.unpack('<44B',     \
+                                                                pkt_data[:44]))
+                data['sample_cnt'] += 1
+        elif cnt == data['samples']:
+            print('W: All packets were received, and then some...')
+            data['dump'].append([pkt_status, pkt_type, pkt_data])
     else:
-        print('invalid')
-        dump.append([status, type, data])
+        print('E: Invalid packet! Appending to data dump.')
+        data['dump'].append([pkt_status, pkt_type, pkt_data])
 
 
 ### Exception handling
