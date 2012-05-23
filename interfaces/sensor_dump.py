@@ -195,7 +195,7 @@ def received(packet):
                 data['row_num'][cnt]    = struct.unpack('<B',  pkt_data[22:23])
                 data['row_valid'][cnt]  = struct.unpack('<B',  pkt_data[23:24])
                 data['row'][cnt,:20]    = np.array(struct.unpack('<20B',     \
-                                                               pkt_data[25:]))
+                                                               pkt_data[24:]))
             elif pkt_index == 1:
                 data['row'][cnt,20:64]  = np.array(struct.unpack('<44B',     \
                                                                pkt_data[:44]))
