@@ -54,19 +54,10 @@
 #include "cam.h"
 #include "gyro.h"
 
-//#include <stdio.h>
 #include <string.h>
-//#include <stdlib.h>
 
 
 /* Commands */
-#define CMD_SET_MOTOR_SPEED         0
-#define CMD_RECORD_SENSOR_DUMP      4
-#define CMD_GET_MEM_CONTENTS        5
-#define CMD_RUN_GYRO_CALIB          0x0d
-#define CMD_GET_GYRO_CALIB_PARAM    0x0e
-#define MAX_CMD_FUNC_SIZE           0xFF
-
 /* Camera */
 #define IM_COLS                     160
 #define IM_ROWS                     120
@@ -80,12 +71,17 @@
 #define MEM_DATAPOINT_SIZE          176
 #define MEM_PAGE_SIZE               528
 #define MEM_PAGES                   100
+#define CMD_SET_MOTOR_SPEED      0
+#define CMD_RECORD_SENSOR_DUMP   4
+#define CMD_GET_MEM_CONTENTS     5
+#define CMD_RUN_GYRO_CALIB       0x0d
+#define CMD_GET_GYRO_CALIB_PARAM 0x0e
+#define MAX_CMD_FUNC_SIZE        0xFF
+
 
 /*-----------------------------------------------------------------------------
  *          Private declarations
 -----------------------------------------------------------------------------*/
-
-void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char, unsigned char*);
 
 // A datapoint is saved upon completion of a camera row capture.
 //
@@ -97,6 +93,9 @@ void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char, unsigned char*
 //  gyro    : raw gyro values
 //  gyro_ts : system time when gyro capture completes [ms]
 //  bemf    : main motor Back-EMF reading
+void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char,
+                                    unsigned char*);
+
 union {
     struct {
         unsigned int  sample;                   // (2)
@@ -115,11 +114,16 @@ union {
  *          Declaration of private functions
  ---------------------------------------------------------------------------*/
 
-static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigned char *frame);
-static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsigned char *frame);
-static void cmdGetMemContents(unsigned char status, unsigned char length, unsigned char *frame);
-static void cmdRunGyroCalib(unsigned char status, unsigned char length, unsigned char *frame);
-static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, unsigned char *frame);
+static void cmdSetMotorSpeed(unsigned char status, unsigned char length,
+                             unsigned char *frame);
+static void cmdRecordSensorDump(unsigned char status, unsigned char length,
+                                unsigned char *frame);
+static void cmdGetMemContents(unsigned char status, unsigned char length,
+                              unsigned char *frame);
+static void cmdRunGyroCalib(unsigned char status, unsigned char length,
+                            unsigned char *frame);
+static void cmdGetGyroCalibParam(unsigned char status, unsigned char length,
+                                 unsigned char *frame);
 
 
 /*-----------------------------------------------------------------------------
@@ -167,7 +171,8 @@ void cmdHandleRadioRxBuffer(void)
 -----------------------------------------------------------------------------*/
 
 // Update duty cycle - Main drive (PWM1L)
-static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigned char *frame)
+static void cmdSetMotorSpeed(unsigned char status, unsigned char length,
+                             unsigned char *frame)
 {
     unsigned char chr_test[4];
     float *duty_cycle = (float*)chr_test;
@@ -180,8 +185,6 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length, unsigne
     mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
 }
 
-static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsigned char *frame) {
-
     unsigned int samples = frame[0] + (frame[1] << 8),
                  count = samples,
                  mem_byte = 0,
@@ -189,6 +192,9 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
                  max_page = mem_page + samples/3 + 0x80,
                  sector = mem_page,
                  millis_factor = sclockGetMillisFactor();
+static void cmdRecordSensorDump (unsigned char status, unsigned char length,
+                                 unsigned char *frame)
+{
     unsigned long next_sample_time = 0;
     static unsigned char buf_index = 1;
 
@@ -202,6 +208,7 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
 
     // Dump sensor data to memory
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 1;
+
     next_sample_time = sclockGetLocalTicks();
     do
     {
@@ -243,10 +250,12 @@ static void cmdRecordSensorDump(unsigned char status, unsigned char length, unsi
             count--;
         }
     } while (count);
+
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdGetMemContents(unsigned char status, unsigned char length, unsigned char *frame)
+static void cmdGetMemContents(unsigned char status, unsigned char length,
+                              unsigned char *frame)
 {
     unsigned int start_page   = frame[0] + (frame[1] << 8),
                  end_page     = frame[2] + (frame[3] << 8),
@@ -291,16 +300,20 @@ static void cmdGetMemContents(unsigned char status, unsigned char length, unsign
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdRunGyroCalib(unsigned char status, unsigned char length, unsigned char *frame)
+static void cmdRunGyroCalib(unsigned char status, unsigned char length,
+                            unsigned char *frame)
 {
     unsigned int count = frame[0] + (frame[1] << 8);
 
     LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 1;
+
     gyroRunCalib(count);
+
     LED_GREEN = 0; LED_ORANGE = 0;
 }
 
-static void cmdGetGyroCalibParam(unsigned char status, unsigned char length, unsigned char *frame)
+static void cmdGetGyroCalibParam(unsigned char status, unsigned char length,
+                                 unsigned char *frame)
 {
     Payload pld;
     MacPacket packet;
