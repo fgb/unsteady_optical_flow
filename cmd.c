@@ -75,28 +75,20 @@
  *          Private declarations
 -----------------------------------------------------------------------------*/
 
-// A datapoint is saved upon completion of a camera row capture.
-//
-// It contains:
-//  sample  : datapoint number (starting from 0)
-//  row     : serialized captured row data
-//  row_num : physical row number (0 to IM_ROWS)
-//  row_ts  : system time when row capture completes [ms]
-//  gyro    : raw gyro values
-//  gyro_ts : system time when gyro capture completes [ms]
-//  bemf    : main motor Back-EMF reading
 void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char,
                                     unsigned char*);
 
 union {
     struct {
-        unsigned int  sample;                   // (2)
-        unsigned int  bemf;                     // (2)
-        unsigned char gyro[3*sizeof(int)];      // (6)
-        unsigned int  gyro_ts;                  // (2)
-        unsigned int  row_num;                  // (2)
-        unsigned int  row_ts;                   // (2)
-        unsigned char row[IM_COLS];             // (160)
+        unsigned int  id;                   // (2)   sample number
+        unsigned long bemf_ts;              // (4)
+        unsigned int  bemf;                 // (2)   main motor Back-EMF
+        unsigned long gyro_ts;              // (4)
+        unsigned char gyro[3*sizeof(int)];  // (6)   raw gyro values
+        unsigned long row_ts;               // (4)
+        unsigned char row_num;              // (1)   physical row number
+        unsigned char row_valid;            // (1)   was row captured?
+        unsigned char row[IM_COLS];         // (152) camera image row
     };
     unsigned char contents[SAMPLE_SIZE];    // (176) total
 } sample;
@@ -212,22 +204,28 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
     {
         if (sclockGetLocalTicks() > next_sample_time)
         {
-            // Capture sensor datapoint
-            if (camHasNewRow())
+            // Capture sensor sample
+            if (camHasNewRow())                             // Camera
             {
-                row_buff = camGetRow();
-                memcpy(data.row, row_buff->pixels, IM_COLS);
-                data.row_num = row_buff->row_num;
-                data.row_ts = (unsigned int) (row_buff->timestamp & 0x00FF);
-            } else { // If no new row is available, clear relevant fields
-                memset(data.row, 0, IM_COLS);
-                data.row_num = 0xFFFF;
-                data.row_ts = 0;
+                row_buff         = camGetRow();
+                sample.row_ts    = row_buff->timestamp;
+                sample.row_num   = (unsigned int) row_buff->row_num;
+                sample.row_valid = 1;
+                memcpy(sample.row, row_buff->pixels, IM_COLS);
+            } else {
+                sample.row_ts    = 0;
+                sample.row_num   = 0xFF;
+                sample.row_valid = 0;
+                memset(sample.row, 0, IM_COLS);
             }
-            gyroGetXYZ(data.gyro);
-            data.gyro_ts = (unsigned int) (sclockGetLocalTicks() & 0x00FF);
-            data.bemf = ADC1BUF0;
-            data.sample = samples - count;
+
+            sample.gyro_ts = sclockGetLocalTicks();         // Gyroscope
+            gyroGetXYZ(sample.gyro);
+
+            sample.bemf_ts = sclockGetLocalTicks();         // Back-EMF
+            sample.bemf    = ADC1BUF0;
+
+            sample.id      = samples - count;               // Sample #
 
             // Send sample to memory buffer
             dfmemWriteBuffer(sample.contents, SAMPLE_SIZE, mem_byte,
