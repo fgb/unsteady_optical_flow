@@ -90,6 +90,7 @@ def main():
     data['bemf_ts']    = np.zeros((data['samples'], 1),   dtype=np.uint32)
     data['bemf']       = np.zeros((data['samples'], 1),   dtype=np.uint16)
     data['gyro_ts']    = np.zeros((data['samples'], 1),   dtype=np.uint32)
+    data['gyro_calib'] = np.zeros((data['samples'], 3),   dtype=np.float32)
     data['gyro']       = np.zeros((data['samples'], 3),   dtype=np.int16)
     data['row_ts']     = np.zeros((data['samples'], 1),   dtype=np.uint32)
     data['row_num']    = np.zeros((data['samples'], 1),   dtype=np.uint8)
@@ -181,8 +182,7 @@ def received(packet):
     index      = 0
 
     if (pkt_type == cmd['GET_GYRO_CALIB_PARAM']):
-        gyro_calib = np.array(struct.unpack('<3f', pkt_data))
-        print(gyro_calib)
+        data['gyro_calib'] = np.array(struct.unpack('<3f', pkt_data))
     elif (pkt_type == cmd['GET_MEM_CONTENTS']):
         if cnt < data['samples']:
             index = pkt_status % 4
