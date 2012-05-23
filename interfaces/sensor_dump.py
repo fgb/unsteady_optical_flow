@@ -46,7 +46,7 @@
 
 import sys, os, time, struct, traceback
 import numpy as np, matplotlib.pyplot as plt, Image
-from pymageproc import radio, payload
+from imageproc_py import radio, payload
 
 # Global Declarations
 data = {}
@@ -172,40 +172,39 @@ def main():
 def received(packet):
 
     data['packet_cnt'] += 1
+
+    pld         = payload.Payload(packet.get('rf_data'))
+    pkt_status  = pld.status
+    pkt_index   = pkt_status % 4
+    pkt_type    = pld.type
+    pkt_data    = pld.data
+
     cnt = data['sample_cnt']
-
-    pld = payload.Payload(packet.get('rf_data'))
-
-    pkt_status = pld.status
-    pkt_type   = pld.type
-    pkt_data   = pld.data
-    index      = 0
 
     if (pkt_type == cmd['GET_GYRO_CALIB_PARAM']):
         data['gyro_calib'] = np.array(struct.unpack('<3f', pkt_data))
     elif (pkt_type == cmd['GET_MEM_CONTENTS']):
         if cnt < data['samples']:
-            index = pkt_status % 4
-            if index == 0:
-                data['id'][cnt]        = struct.unpack('<H',  pkt_data[:2])
-                data['bemf_ts'][cnt]   = struct.unpack('<L',  pkt_data[2:6])
-                data['bemf'][cnt]      = struct.unpack('<H',  pkt_data[6:8])
-                data['gyro_ts'][cnt]   = struct.unpack('<L',  pkt_data[8:12])
-                data['gyro'][cnt,:]    = struct.unpack('<3h', pkt_data[12:18])
-                data['row_ts'][cnt]    = struct.unpack('<L',  pkt_data[18:22])
-                data['row_num'][cnt]   = struct.unpack('<B',  pkt_data[22:23])
-                data['row_valid'][cnt] = struct.unpack('<B',  pkt_data[23:24])
-                data['row'][cnt,:20]   = np.array(struct.unpack('<20B',       \
-                                                              pkt_data[25:44]))
-            elif index == 1:
-                data['row'][cnt,20:64]   = np.array(struct.unpack('<44B',     \
-                                                                pkt_data[:44]))
-            elif index == 2:
-                data['row'][cnt,64:108]  = np.array(struct.unpack('<44B',     \
-                                                                pkt_data[:44]))
-            elif index == 3:
-                data['row'][cnt,108:152] = np.array(struct.unpack('<44B',     \
-                                                                pkt_data[:44]))
+            if pkt_index == 0:
+                data['id'][cnt]         = struct.unpack('<H',  pkt_data[:2])
+                data['bemf_ts'][cnt]    = struct.unpack('<L',  pkt_data[2:6])
+                data['bemf'][cnt]       = struct.unpack('<H',  pkt_data[6:8])
+                data['gyro_ts'][cnt]    = struct.unpack('<L',  pkt_data[8:12])
+                data['gyro'][cnt]       = struct.unpack('<3h', pkt_data[12:18])
+                data['row_ts'][cnt]     = struct.unpack('<L',  pkt_data[18:22])
+                data['row_num'][cnt]    = struct.unpack('<B',  pkt_data[22:23])
+                data['row_valid'][cnt]  = struct.unpack('<B',  pkt_data[23:24])
+                data['row'][cnt,:20]    = np.array(struct.unpack('<20B',     \
+                                                               pkt_data[25:]))
+            elif pkt_index == 1:
+                data['row'][cnt,20:64]  = np.array(struct.unpack('<44B',     \
+                                                               pkt_data[:44]))
+            elif pkt_index == 2:
+                data['row'][cnt,64:108] = np.array(struct.unpack('<44B',     \
+                                                               pkt_data[:44]))
+            elif pkt_index == 3:
+                data['row'][cnt,108:]   = np.array(struct.unpack('<44B',     \
+                                                               pkt_data[:44]))
                 data['sample_cnt'] += 1
                 if data['sample_cnt'] == data['samples']:
                     print('I: All packets were received.')
