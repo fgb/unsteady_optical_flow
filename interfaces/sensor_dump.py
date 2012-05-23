@@ -44,16 +44,13 @@
 #  - This file is derived from xboptflow.py, by Stanley S. Baek.
 #
 
-import sys, os, subprocess, time, struct, traceback
+import sys, os, time, struct, traceback
 import numpy as np, matplotlib.pyplot as plt, Image
 from pymageproc import radio, payload
 
-# Commands
-CMD_SET_MOTOR_SPEED      = 0
-CMD_RECORD_SENSOR_DUMP   = 4
-CMD_GET_MEM_CONTENTS     = 5
-CMD_RUN_GYRO_CALIB       = 0x0d
-CMD_GET_GYRO_CALIB_PARAM = 0x0e
+# Global Declarations
+cmd  = {}
+
 
 def main():
     global datasets, data_rx, count, dump, sample, bemf, gyro, gyro_ts,   \
@@ -77,6 +74,12 @@ def main():
     baud      = 230400
     #port      = '/dev/tty.usbserial-A700eYvL' # XBee
     #baud      = 57600
+
+    cmd['SET_MOTOR_SPEED']      = 0
+    cmd['RECORD_SENSOR_DUMP']   = 4
+    cmd['GET_MEM_CONTENTS']     = 5
+    cmd['RUN_GYRO_CALIB']       = 0x0d
+    cmd['GET_GYRO_CALIB_PARAM'] = 0x0e
 
     # Data
     datasets = 3000 # (max is 0xFFFF, multiple of 3)
@@ -106,29 +109,29 @@ def main():
     # Run robot
     if do_run_robot:
         # Get gyro calibration data
-        wrl.send(dest_addr, 0, CMD_RUN_GYRO_CALIB, struct.pack('<H', 2000));
+        wrl.send(dest_addr, 0, cmd['RUN_GYRO_CALIB'], struct.pack('<H', 2000));
         print('I: Running gyro calibration...')
         time.sleep(2)
-        wrl.send(dest_addr, 0, CMD_GET_GYRO_CALIB_PARAM, ' ');
+        wrl.send(dest_addr, 0, cmd['GET_GYRO_CALIB_PARAM'], ' ');
 
         # Update duty cycle
-        wrl.send(dest_addr, 0, CMD_SET_MOTOR_SPEED, struct.pack('<f', dcval))
+        wrl.send(dest_addr, 0, cmd['SET_MOTOR_SPEED'],                      \
         print('I: Setting motor to desired duty cycle...')
 
         # Request sensor dump to memory
         print('I: Requesting a sensor dump into memory...')
-        wrl.send(dest_addr, 0, CMD_RECORD_SENSOR_DUMP, struct.pack('<H', datasets))
-        time.sleep(2.5)
+        wrl.send(dest_addr, 0, cmd['RECORD_SENSOR_DUMP'],                     \
+        time.sleep(3)
 
-        # Stop motor <-- done automatically when requesting mem contents
+        # Stop motor <-- done automatically halfway through sensor dump
         #print('I: Stopping motor...')
-        #wrl.send(dest_addr, 0, CMD_SET_MOTOR_SPEED, struct.pack('<f', 0))
+        #wrl.send(dest_addr, 0, cmd['SET_MOTOR_SPEED'], struct.pack('<f', 0))
         #time.sleep(0.5)
 
     # Request memory contents
     raw_input('Press any key to request memory read')
     print('I: Requesting memory contents...')
-    wrl.send(dest_addr, 0, CMD_GET_MEM_CONTENTS, struct.pack('<3H', 0x080, 0x080 + int(np.ceil(datasets/3.0)), 44))
+    wrl.send(dest_addr, 0, cmd['GET_MEM_CONTENTS'],
     time.sleep(0.5)
 
     raw_input('I: Press ENTER when data has been received...')
@@ -170,20 +173,17 @@ def received(packet):
 
     pld = payload.Payload(packet.get('rf_data'))
 
-    status = pld.status
-    type = pld.type
-    data = pld.data
-    index = 0
+    pkt_status = pld.status
+    pkt_type   = pld.type
+    pkt_data   = pld.data
+    index      = 0
 
-    if (type == CMD_RECORD_SENSOR_DUMP):
-        datum = struct.unpack('<L3h', data)
-        print(datum[0], datum[1], datum[2], datum[3])
-    elif (type == CMD_GET_GYRO_CALIB_PARAM):
-        gyro_calib = np.array(struct.unpack('<3f', data))
+    if (pkt_type == cmd['GET_GYRO_CALIB_PARAM']):
+        gyro_calib = np.array(struct.unpack('<3f', pkt_data))
         print(gyro_calib)
     elif (type == CMD_GET_MEM_CONTENTS):
         if count < datasets:
-            index = status % 4
+            index = pkt_status % 4
             if index == 0:
                 sample[count]       = struct.unpack('<H',  data[:2])     # (2)
                 bemf[count]         = struct.unpack('<H',  data[2:4])    # (2)
@@ -205,8 +205,6 @@ def received(packet):
                 count += 1
         elif count == datasets:
             print('...all samples were received.')
-    elif (type == CMD_ECHO):
-        print(status, type, data)
     else:
         print('invalid')
         dump.append([status, type, data])
