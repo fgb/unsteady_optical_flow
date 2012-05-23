@@ -6,8 +6,8 @@
 CND_BASEDIR=`pwd`
 # default configuration
 CND_ARTIFACT_DIR_default=dist/default/production
-CND_ARTIFACT_NAME_default=unsteady-optical-flow.production.hex
-CND_ARTIFACT_PATH_default=dist/default/production/unsteady-optical-flow.production.hex
+CND_ARTIFACT_NAME_default=unsteady_optical_flow.production.hex
+CND_ARTIFACT_PATH_default=dist/default/production/unsteady_optical_flow.production.hex
 CND_PACKAGE_DIR_default=${CND_DISTDIR}/default/package
-CND_PACKAGE_NAME_default=unsteady-optical-flow.tar
-CND_PACKAGE_PATH_default=${CND_DISTDIR}/default/package/unsteady-optical-flow.tar
+CND_PACKAGE_NAME_default=unsteady_optical_flow.tar
+CND_PACKAGE_PATH_default=${CND_DISTDIR}/default/package/unsteady_optical_flow.tar
