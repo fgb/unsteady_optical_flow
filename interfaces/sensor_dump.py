@@ -87,11 +87,13 @@ def main():
     data['sample_cnt'] = 0
     data['dump']       = []
     data['id']         = np.zeros((data['samples'], 1),   dtype=np.uint16)
+    data['bemf_ts']    = np.zeros((data['samples'], 1),   dtype=np.uint32)
     data['bemf']       = np.zeros((data['samples'], 1),   dtype=np.uint16)
     data['gyro_ts']    = np.zeros((data['samples'], 1),   dtype=np.uint32)
     data['gyro']       = np.zeros((data['samples'], 3),   dtype=np.int16)
     data['row_ts']     = np.zeros((data['samples'], 1),   dtype=np.uint32)
     data['row_num']    = np.zeros((data['samples'], 1),   dtype=np.uint8)
+    data['row_valid']  = np.zeros((data['samples'], 1),   dtype=np.uint8)
     data['row']        = np.zeros((data['samples'], 152), dtype=np.uint8)
     data['dcval']      = 0.0
 
@@ -186,11 +188,13 @@ def received(packet):
             index = pkt_status % 4
             if index == 0:
                 data['id'][cnt]        = struct.unpack('<H',  pkt_data[:2])
+                data['bemf_ts'][cnt]   = struct.unpack('<L',  pkt_data[2:6])
                 data['bemf'][cnt]      = struct.unpack('<H',  pkt_data[6:8])
                 data['gyro_ts'][cnt]   = struct.unpack('<L',  pkt_data[8:12])
                 data['gyro'][cnt,:]    = struct.unpack('<3h', pkt_data[12:18])
                 data['row_ts'][cnt]    = struct.unpack('<L',  pkt_data[18:22])
                 data['row_num'][cnt]   = struct.unpack('<B',  pkt_data[22:23])
+                data['row_valid'][cnt] = struct.unpack('<B',  pkt_data[23:24])
                 data['row'][cnt,:20]   = np.array(struct.unpack('<20B',       \
                                                               pkt_data[25:44]))
             elif index == 1:
