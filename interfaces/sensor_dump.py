@@ -207,8 +207,10 @@ def received(packet):
                 data['row'][cnt,108:152] = np.array(struct.unpack('<44B',     \
                                                                 pkt_data[:44]))
                 data['sample_cnt'] += 1
-        elif cnt == data['samples']:
-            print('W: All packets were received, and then some...')
+                if data['sample_cnt'] == data['samples']:
+                    print('I: All packets were received.')
+        else:
+            print('W: Extra packet received! Appending to data dump.')
             data['dump'].append([pkt_status, pkt_type, pkt_data])
     else:
         print('E: Invalid packet! Appending to data dump.')
