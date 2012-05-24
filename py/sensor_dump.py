@@ -143,7 +143,7 @@ def main():
                         ' including ' + str(data['sample_cnt']) + ' samples.')
 
     # Save data to disk
-    np.savez(root + '_data.npz', data=data)
+    np.savez_compressed(root + '_data.npz', **data)
     print('I: Arrays saved.')
 
     #*** Visualize sensor dump
