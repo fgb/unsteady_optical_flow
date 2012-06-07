@@ -150,19 +150,17 @@ def main():
 
 def received(packet):
 
-    data['packet_cnt'] += 1
-
     pld         = payload.Payload(packet.get('rf_data'))
     pkt_status  = pld.status
     pkt_index   = pkt_status % 4
     pkt_type    = pld.type
     pkt_data    = pld.data
 
-    cnt = data['sample_cnt']
-
     if (pkt_type == cmd['GET_GYRO_CALIB_PARAM']):
         data['gyro_calib'] = np.array(struct.unpack('<3f', pkt_data))
     elif (pkt_type == cmd['GET_MEM_CONTENTS']):
+        data['packet_cnt'] += 1
+        cnt = data['sample_cnt']
         if cnt < data['samples']:
             if pkt_index == 0:
                 data['id'][cnt]         = struct.unpack('<H',  pkt_data[:2])
