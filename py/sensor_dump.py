@@ -157,8 +157,9 @@ def received(packet):
     pkt_data    = pld.data
 
     if (pkt_type == cmd['GET_GYRO_CALIB_PARAM']):
-        data['gyro_calib'] = np.array(struct.unpack('<3f', pkt_data))
+        data['gyro_calib'] = struct.unpack('<3f', pkt_data)
     elif (pkt_type == cmd['GET_MEM_CONTENTS']):
+        #print(data['packet_cnt'], pkt_status, pkt_status%2, data['sample_cnt'])
         data['packet_cnt'] += 1
         cnt = data['sample_cnt']
         if cnt < data['samples']:
