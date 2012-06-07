@@ -118,15 +118,12 @@ void cmdSetup(void)
 {
     unsigned int i;
 
-    for( i = 0; i < MAX_CMD_FUNC_SIZE; ++i )
-    {
-        cmd_func[i] = NULL;
-    }
+    for( i = 0; i < MAX_CMD_FUNC_SIZE; ++i ) cmd_func[i] = NULL;
 
-    cmd_func[CMD_SET_MOTOR_SPEED] = &cmdSetMotorSpeed;
-    cmd_func[CMD_RECORD_SENSOR_DUMP] = &cmdRecordSensorDump;
-    cmd_func[CMD_GET_MEM_CONTENTS] = &cmdGetMemContents;
-    cmd_func[CMD_RUN_GYRO_CALIB] = &cmdRunGyroCalib;
+    cmd_func[CMD_SET_MOTOR_SPEED]      = &cmdSetMotorSpeed;
+    cmd_func[CMD_RECORD_SENSOR_DUMP]   = &cmdRecordSensorDump;
+    cmd_func[CMD_GET_MEM_CONTENTS]     = &cmdGetMemContents;
+    cmd_func[CMD_RUN_GYRO_CALIB]       = &cmdRunGyroCalib;
     cmd_func[CMD_GET_GYRO_CALIB_PARAM] = &cmdGetGyroCalibParam;
 }
 
@@ -185,7 +182,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
     CamRow row_buff;
 
     // Erase as many memory sectors as needed
-    // TODO (fgb) : adapt to any number of samples, not only multiples of 3
+    // TODO (fgb) : adapt to any number of samples, not only mult of 3
     LED_GREEN = 0; LED_RED = 1; LED_ORANGE = 0;
 
     do
@@ -241,7 +238,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
             }
 
             // Stop motor while still sampling, to capture final glide/crash
-            if (count == samples/2) { mcSetDutyCycle(MC_CHANNEL_PWM1, 0); }
+            if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
             next_sample_time += millis_factor; // 1 KHz sampling
             count--;

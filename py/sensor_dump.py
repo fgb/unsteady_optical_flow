@@ -132,15 +132,15 @@ def main():
         #time.sleep(0.5)
 
     # Request memory contents
-    raw_input('Press any key to request memory read')
+    raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
     print('I: Requesting memory contents...')
     wrl.send(dest_addr, 0, cmd['GET_MEM_CONTENTS'],
         struct.pack('<3H', 0x80, 0x80 + int(np.ceil(data['samples']/3.0)), 44))
     time.sleep(0.5)
 
-    raw_input('I: Press ENTER when data has been received...')
-    print('I: Total packets received: ' + str(data['packet_cnt']) +          \
-                        ' including ' + str(data['sample_cnt']) + ' samples.')
+    raw_input('I: When data has been received, please [PRESS ANY KEY]')
+    print('I: ' + str(data['packet_cnt']) + ' packets received, including ' + \
+                                         str(data['sample_cnt']) + ' samples.')
 
     # Save data to disk
     np.savez_compressed(root + '_data.npz', **data)
@@ -212,9 +212,8 @@ def received(packet):
             print('W: Extra packet received! Appending to data dump.')
             data['dump'].append([pkt_status, pkt_type, pkt_data])
     else:
-        print('E: Invalid packet! Appending to data dump.')
+        print('E: Invalid packet received! Appending to data dump.')
         data['dump'].append([pkt_status, pkt_type, pkt_data])
-
 
 ### Exception handling
 
