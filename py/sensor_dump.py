@@ -136,7 +136,7 @@ def main():
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
     print('I: Requesting memory contents...')
     wrl.send(dest_addr, 0, cmd['GET_MEM_CONTENTS'],
-        struct.pack('<3H', 0x80, 0x80 + int(np.ceil(data['samples']/3.0)), 44))
+        struct.pack('<3H', 0x80, 0x80 + int(np.ceil(data['samples']/3.)), 88))
     time.sleep(0.5)
 
     raw_input('I: When data has been received, please [PRESS ANY KEY]')
@@ -152,7 +152,6 @@ def received(packet):
 
     pld         = payload.Payload(packet.get('rf_data'))
     pkt_status  = pld.status
-    pkt_index   = pkt_status % 4
     pkt_type    = pld.type
     pkt_data    = pld.data
 
@@ -163,27 +162,19 @@ def received(packet):
         data['packet_cnt'] += 1
         cnt = data['sample_cnt']
         if cnt < data['samples']:
-            if pkt_index == 0:
-                data['id'][cnt]         = struct.unpack('<H',  pkt_data[:2])
-                data['bemf_ts'][cnt]    = struct.unpack('<L',  pkt_data[2:6])
-                data['bemf'][cnt]       = struct.unpack('<H',  pkt_data[6:8])
-                data['gyro_ts'][cnt]    = struct.unpack('<L',  pkt_data[8:12])
-                data['gyro'][cnt]       = struct.unpack('<3h', pkt_data[12:18])
-                data['row_ts'][cnt]     = struct.unpack('<L',  pkt_data[18:22])
-                data['row_num'][cnt]    = struct.unpack('<B',  pkt_data[22:23])
-                data['row_valid'][cnt]  = struct.unpack('<B',  pkt_data[23:24])
-                data['row'][cnt,:20]    = np.array(struct.unpack('<20B',     \
-                                                               pkt_data[24:]))
-            elif pkt_index == 1:
-                data['row'][cnt,20:64]  = np.array(struct.unpack('<44B',     \
-                                                               pkt_data[:44]))
-            elif pkt_index == 2:
-                data['row'][cnt,64:108] = np.array(struct.unpack('<44B',     \
-                                                               pkt_data[:44]))
-            elif pkt_index == 3:
-                data['row'][cnt,108:]   = np.array(struct.unpack('<44B',     \
-                                                               pkt_data[:44]))
-                data['sample_cnt'] += 1
+            if not (pkt_status % 2):
+                data['id'][cnt]        = struct.unpack('<H',   pkt_data[:2])
+                data['bemf_ts'][cnt]   = struct.unpack('<L',   pkt_data[2:6])
+                data['bemf'][cnt]      = struct.unpack('<H',   pkt_data[6:8])
+                data['gyro_ts'][cnt]   = struct.unpack('<L',   pkt_data[8:12])
+                data['gyro'][cnt]      = struct.unpack('<3h',  pkt_data[12:18])
+                data['row_ts'][cnt]    = struct.unpack('<L',   pkt_data[18:22])
+                data['row_num'][cnt]   = struct.unpack('<B',   pkt_data[22:23])
+                data['row_valid'][cnt] = struct.unpack('<B',   pkt_data[23:24])
+                data['row'][cnt,:64]   = struct.unpack('<64B', pkt_data[24:])
+            else:
+                data['row'][cnt,64:]   = struct.unpack('<88B', pkt_data)
+                data['sample_cnt']    += 1
                 if data['sample_cnt'] == data['samples']:
                     print('I: All packets were received.')
         else:
