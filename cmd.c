@@ -238,7 +238,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
             // Stop motor while still sampling, to capture final glide/crash
             if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
-            next_sample_time += 2 * millis_factor; // .5 KHz sampling
+            next_sample_time += millis_factor; // 1 KHz sampling
             count++;
         }
     } while (count < samples);
