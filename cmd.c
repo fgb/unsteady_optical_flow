@@ -176,8 +176,8 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
                   mem_page_max     = mem_page + samples/3 + 0x80,
                   mem_sector       = mem_page,
                   millis_factor    = sclockGetMillisFactor();
-    static unsigned char buf_index = 1;
     unsigned long next_sample_time = sclockGetLocalTicks();
+    static unsigned char buffer    = 1;
 
     CamRow row_buff;
 
@@ -224,15 +224,14 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
             sample.id      = count;                         // Sample #
 
             // Send sample to memory buffer
-            dfmemWriteBuffer(sample.contents, SAMPLE_SIZE, mem_byte,
-                             buf_index);
+            dfmemWriteBuffer(sample.contents, SAMPLE_SIZE, mem_byte, buffer);
             mem_byte += SAMPLE_SIZE;
 
-            // If buffer full, write it to memory
-            if (mem_byte + SAMPLE_SIZE > MEM_PAGE_SIZE)
+            // If buffer is about to overflow, write it to memory
+            if ( mem_byte > (MEM_PAGE_SIZE - SAMPLE_SIZE) )
             {
-                dfmemWriteBuffer2MemoryNoErase(mem_page++, buf_index);
-                buf_index ^= 0x01;  // toggle between buffer 0 and 1
+                dfmemWriteBuffer2MemoryNoErase(mem_page++, buffer);
+                buffer ^= 0x1;  // toggle between buffer 0 and 1
                 mem_byte = 0;
             }
 
@@ -250,10 +249,10 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
 static void cmdGetMemContents(unsigned char status, unsigned char length,
                               unsigned char *frame)
 {
-    unsigned int start_page   = frame[0] + (frame[1] << 8),
-                 end_page     = frame[2] + (frame[3] << 8),
-                 tx_data_size = frame[4] + (frame[5] << 8),
-                 page, j;
+    unsigned int start_page = frame[0] + (frame[1] << 8),
+                 end_page   = frame[2] + (frame[3] << 8),
+                 pld_size   = frame[4] + (frame[5] << 8),
+                 page, mem_byte;
     unsigned char count = 0;
 
     Payload pld;
@@ -264,21 +263,21 @@ static void cmdGetMemContents(unsigned char status, unsigned char length,
 
     for ( page = start_page; page < end_page; ++page )
     {
-        j = 0;
+        mem_byte = 0;
         do
         {
             radioProcess();
-            packet = radioRequestPacket(tx_data_size);
+            packet = radioRequestPacket(pld_size);
             if(packet == NULL) { continue; }
             macSetDestPan(packet, PAN_ID);
             macSetDestAddr(packet, DEST_ADDR);
             pld = macGetPayload(packet);
-            dfmemRead(page, j, tx_data_size, payGetData(pld));
+            dfmemRead(page, mem_byte, pld_size, payGetData(pld));
             paySetStatus(pld, count++);
             paySetType(pld, CMD_GET_MEM_CONTENTS);
             while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
-            j += tx_data_size;
-        } while (j + tx_data_size <= MEM_PAGE_SIZE);
+            mem_byte += pld_size;
+        } while ( mem_byte <= (MEM_PAGE_SIZE - pld_size) );
 
         if ((page >> 7) & 0x1)
         {
