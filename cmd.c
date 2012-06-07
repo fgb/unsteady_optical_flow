@@ -176,8 +176,8 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
                   mem_page_max     = mem_page + samples/3 + 0x80,
                   mem_sector       = mem_page,
                   millis_factor    = sclockGetMillisFactor();
-    unsigned long next_sample_time = 0;
     static unsigned char buf_index = 1;
+    unsigned long next_sample_time = sclockGetLocalTicks();
 
     CamRow row_buff;
 
@@ -196,7 +196,6 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
     // Dump sensor data to memory
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 1;
 
-    next_sample_time = sclockGetLocalTicks();
     do
     {
         if (sclockGetLocalTicks() > next_sample_time)
@@ -240,7 +239,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
             // Stop motor while still sampling, to capture final glide/crash
             if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
-            next_sample_time += millis_factor; // 1 KHz sampling
+            next_sample_time += 2 * millis_factor; // .5 KHz sampling
             count++;
         }
     } while (count < samples);
