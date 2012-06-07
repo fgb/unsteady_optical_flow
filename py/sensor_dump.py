@@ -82,6 +82,7 @@ def main():
     cmd['GET_GYRO_CALIB_PARAM'] = 0x0e
 
     # Data
+    data['fs']         = 500.
     data['samples']    = 3000 # (max is 0xFFFF, multiple of 3)
     data['packet_cnt'] = 0
     data['sample_cnt'] = 0
@@ -124,7 +125,7 @@ def main():
         print('I: Requesting a sensor dump into memory...')
         wrl.send(dest_addr, 0, cmd['RECORD_SENSOR_DUMP'],                     \
                                             struct.pack('<H', data['samples']))
-        time.sleep(3)
+        time.sleep( data['samples'] / data['fs'] + 1 )
 
         # Stop motor <-- done automatically halfway through sensor dump
         #print('I: Stopping motor...')
