@@ -170,7 +170,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
                                  unsigned char *frame)
 {
     unsigned int  samples          = frame[0] + (frame[1] << 8),
-                  count            = samples,
+                  count            = 0,
                   mem_byte         = 0,
                   mem_page         = 0x80,
                   mem_page_max     = mem_page + samples/3 + 0x80,
@@ -222,7 +222,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
             sample.bemf_ts = sclockGetLocalTicks();         // Back-EMF
             sample.bemf    = ADC1BUF0;
 
-            sample.id      = samples - count;               // Sample #
+            sample.id      = count;                         // Sample #
 
             // Send sample to memory buffer
             dfmemWriteBuffer(sample.contents, SAMPLE_SIZE, mem_byte,
@@ -241,9 +241,9 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
             if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
             next_sample_time += millis_factor; // 1 KHz sampling
-            count--;
+            count++;
         }
-    } while (count);
+    } while (count < samples);
 
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
