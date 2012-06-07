@@ -45,7 +45,7 @@
 #
 
 import sys, os, time, struct, traceback
-import numpy as np, matplotlib.pyplot as plt, Image
+import numpy as np
 from imageproc_py import radio, payload
 
 # Global Declarations
@@ -146,28 +146,6 @@ def main():
     np.savez_compressed(root + '_data.npz', **data)
     print('I: Arrays saved.')
 
-    #*** Visualize sensor dump
-
-    ## Timestamps
-    #t = timestamp/1E6
-    ##dt = t[1:] - t[:-1]
-    ##fs = 1/dt
-    ##print(fs)
-    #
-    ## Gyro
-    #plt.figure()
-    #plt.plot(t,data['gyro'][:,0], t,data['gyro'][:,1], t,data['gyro'][:,2])
-    #
-    ## Back-EMF
-    #V = 4.0 * np.array(1023.0 - data['bemf'], dtype=float) / 1023.0
-    #plt.figure()
-    #plt.plot(t,V)
-    #
-    ## Rows
-    #Image.fromarray(data['row']).show()
-    #
-    ## Show plots
-    #plt.show()
 
 def received(packet):
 
