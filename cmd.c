@@ -258,6 +258,9 @@ static void cmdGetMemContents(unsigned char status, unsigned char length,
     Payload pld;
     MacPacket packet;
 
+    // Disable camera capture interrupt
+    camStop();
+
     // Send back memory contents
     LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 0;
 
