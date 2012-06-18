@@ -32,7 +32,7 @@
 #
 # by Fernando L. Garcia Bermudez and Stanley S. Baek
 #
-# v.0.3
+# v.0.4
 #
 # Revisions:
 #  Fernando L. Garcia Bermudez      2010-9-11   Initial release.
@@ -59,7 +59,8 @@ def main():
     do_run_robot = 1
 
     # Construct filename
-    path     = os.path.expanduser('~/Research/Data/tests/sensorDump/')
+    path     = os.path.expanduser(                                     \
+                    '~/Research/Data/unsteadyOF/gyro_filter/duncaroach')
     name     = 'test'
     datetime = time.localtime()
     dt_str   = time.strftime('%Y.%m.%d_%H.%M.%S', datetime)
@@ -117,6 +118,7 @@ def main():
         wrl.send(dest_addr, 0, cmd['GET_GYRO_CALIB_PARAM'], ' ');
 
         # Update duty cycle
+        raw_input('Q: To start the run, please [PRESS ANY KEY]')
         wrl.send(dest_addr, 0, cmd['SET_MOTOR_SPEED'],                      \
                                             struct.pack('<f', data['dcval']))
         print('I: Setting motor to desired duty cycle...')
@@ -158,7 +160,6 @@ def received(packet):
     if (pkt_type == cmd['GET_GYRO_CALIB_PARAM']):
         data['gyro_calib'] = struct.unpack('<3f', pkt_data)
     elif (pkt_type == cmd['GET_MEM_CONTENTS']):
-        #print(data['packet_cnt'], pkt_status, pkt_status%2, data['sample_cnt'])
         data['packet_cnt'] += 1
         cnt = data['sample_cnt']
         pkt_index = pkt_status % 4
