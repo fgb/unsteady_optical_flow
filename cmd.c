@@ -52,6 +52,7 @@
 
 #include "dfmem.h"
 #include "cam.h"
+#include "cambuff.h"
 #include "gyro.h"
 
 #include <string.h>
@@ -203,13 +204,14 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
         if (sclockGetLocalTicks() > next_sample_time)
         {
             // Capture sensor sample
-            if (camHasNewRow())                             // Camera
+            if (cambuffHasNewRow())                         // Camera
             {
-                row_buff         = camGetRow();
+                row_buff         = cambuffGetRow();
                 sample.row_ts    = row_buff->timestamp;
                 sample.row_num   = (unsigned int) row_buff->row_num;
                 sample.row_valid = 1;
                 memcpy(sample.row, row_buff->pixels, IM_COLS);
+                cambuffReturnRow(row_buff);
             } else {
                 sample.row_ts    = 0;
                 sample.row_num   = 0xFF;

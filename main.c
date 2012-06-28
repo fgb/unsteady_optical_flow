@@ -56,6 +56,7 @@
 #include "dfmem.h"
 #include "ovcam.h"
 #include "cam.h"
+#include "cambuff.h"
 #include "gyro.h"
 
 
@@ -84,6 +85,7 @@ int main(void) {
     dfmemSetup();
     ovcamSetup();
     camSetup();
+    cambuffSetup();
     gyroSetup();
 
     for (i = 0; i < 6; i++)
