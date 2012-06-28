@@ -59,8 +59,7 @@ def main():
     do_run_robot = 1
 
     # Construct filename
-    path     = os.path.expanduser(                                     \
-                    '~/Research/Data/unsteadyOF/gyro_filter/duncaroach')
+    path     = os.path.expanduser('~/Research/Data/tests/sensorDump/')
     name     = 'test'
     datetime = time.localtime()
     dt_str   = time.strftime('%Y.%m.%d_%H.%M.%S', datetime)
@@ -141,7 +140,7 @@ def main():
         struct.pack('<3H', 0x80, 0x80 + int(np.ceil(data['samples']/3.)), 44))
     time.sleep(0.5)
 
-    raw_input('I: When data has been received, please [PRESS ANY KEY]')
+    raw_input('Q: When data has been received, please [PRESS ANY KEY]')
     print('I: ' + str(data['packet_cnt']) + ' packets received, including ' + \
                                          str(data['sample_cnt']) + ' samples.')
 
