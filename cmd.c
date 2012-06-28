@@ -188,7 +188,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
 
     do
     {
-        dfmemEraseSector(mem_sector);
+        dfmemEraseSector(mem_sector); while(!dfmemIsReady());
         mem_sector += 0x80;
     } while (mem_sector < mem_page_max);
 
