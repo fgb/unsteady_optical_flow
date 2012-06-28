@@ -94,8 +94,6 @@ int main(void) {
     }
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 
-    camStart();
-
     /* Program */
     while(1)
     {

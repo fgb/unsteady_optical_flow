@@ -193,6 +193,8 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
 
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 
+    camStart(); // Enable camera capture interrupt
+
     // Dump sensor data to memory
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 1;
 
@@ -243,6 +245,8 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
         }
     } while (count < samples);
 
+    camStop(); // Disable camera capture interrupt
+
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
@@ -257,9 +261,6 @@ static void cmdGetMemContents(unsigned char status, unsigned char length,
 
     Payload pld;
     MacPacket packet;
-
-    // Disable camera capture interrupt
-    camStop();
 
     // Send back memory contents
     LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 0;
