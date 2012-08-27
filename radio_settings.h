@@ -1,7 +1,7 @@
 /*
  * Radio settings
  *
- * created on 2012-5-14 by fgb (derived from or_const.h by apullin from 2010-9-22)
+ * created on 2012-5-14 by fgb (derived from or_const.h by apullin)
  */
 
 #ifndef __RADIO_SETTINGS_H

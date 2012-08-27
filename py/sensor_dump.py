@@ -59,8 +59,8 @@ def main():
     do_run_robot = 1
 
     # Construct filename
-    path     = os.path.expanduser('~/Research/Data/tests/sensorDump/')
-    name     = 'test'
+    path     = os.path.expanduser('~/Research/Data/unsteadyOF/gyro_filter/vamp/')
+    name     = 'run'
     datetime = time.localtime()
     dt_str   = time.strftime('%Y.%m.%d_%H.%M.%S', datetime)
     root = path + dt_str + '_' + name
@@ -97,7 +97,7 @@ def main():
     data['row_num']    = np.zeros((data['samples'], 1),   dtype=np.uint8)
     data['row_valid']  = np.zeros((data['samples'], 1),   dtype=np.uint8)
     data['row']        = np.zeros((data['samples'], 152), dtype=np.uint8)
-    data['dcval']      = 0.0
+    data['dcval']      = 80.
 
     # Gyro scaling factors
     GYRO_LSB2DEG = 0.0695652174  # 14.375 LSB/(deg/s)

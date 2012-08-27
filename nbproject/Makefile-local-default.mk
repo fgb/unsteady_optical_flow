@@ -21,12 +21,14 @@ PATH:=/Applications/Programming/Microchip/mplabx/mplab_ide.app/Contents/Resource
 MP_JAVA_PATH="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/"
 OS_CURRENT="$(shell uname -s)"
 MP_CC="/Applications/Programming/Microchip/xc16/v1.00/bin/xc16-gcc"
+# MP_CPPC is not defined
 # MP_BC is not defined
 # MP_AS is not defined
 # MP_LD is not defined
 MP_AR="/Applications/Programming/Microchip/xc16/v1.00/bin/xc16-ar"
 DEP_GEN=${MP_JAVA_PATH}java -jar "/Applications/Programming/Microchip/mplabx/mplab_ide.app/Contents/Resources/mplab_ide/mplab_ide/modules/../../bin/extractobjectdependencies.jar" 
 MP_CC_DIR="/Applications/Programming/Microchip/xc16/v1.00/bin"
+# MP_CPPC_DIR is not defined
 # MP_BC_DIR is not defined
 # MP_AS_DIR is not defined
 # MP_LD_DIR is not defined
