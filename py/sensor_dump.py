@@ -76,6 +76,7 @@ def main():
     #baud      = 57600
 
     cmd['SET_MOTOR_SPEED']      = 0
+    cmd['ERASE_MEM_CONTENTS']   = 3
     cmd['RECORD_SENSOR_DUMP']   = 4
     cmd['GET_MEM_CONTENTS']     = 5
     cmd['RUN_GYRO_CALIB']       = 0x0d
@@ -116,6 +117,12 @@ def main():
         time.sleep(2)
         wrl.send(dest_addr, 0, cmd['GET_GYRO_CALIB_PARAM'], ' ');
 
+        # Erase memory contents
+        print('I: Erasing memory contents...')
+        wrl.send(dest_addr, 0, cmd['ERASE_MEM_CONTENTS'],                     \
+                                            struct.pack('<H', data['samples']))
+        time.sleep(3)
+
         # Update duty cycle
         raw_input('Q: To start the run, please [PRESS ANY KEY]')
         wrl.send(dest_addr, 0, cmd['SET_MOTOR_SPEED'],                      \
@@ -136,7 +143,7 @@ def main():
     # Request memory contents
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
     print('I: Requesting memory contents...')
-    wrl.send(dest_addr, 0, cmd['GET_MEM_CONTENTS'],
+    wrl.send(dest_addr, 0, cmd['GET_MEM_CONTENTS'],                          \
         struct.pack('<3H', 0x80, 0x80 + int(np.ceil(data['samples']/3.)), 44))
     time.sleep(0.5)
 

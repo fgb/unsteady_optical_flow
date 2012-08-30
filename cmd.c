@@ -60,6 +60,7 @@
 
 /* Commands */
 #define CMD_SET_MOTOR_SPEED      0
+#define CMD_ERASE_MEM_CONTENTS   3
 #define CMD_RECORD_SENSOR_DUMP   4
 #define CMD_GET_MEM_CONTENTS     5
 #define CMD_RUN_GYRO_CALIB       0x0d
@@ -101,6 +102,8 @@ union {
 
 static void cmdSetMotorSpeed(unsigned char status, unsigned char length,
                              unsigned char *frame);
+static void cmdEraseMemContents(unsigned char status, unsigned char length,
+                              unsigned char *frame);
 static void cmdRecordSensorDump(unsigned char status, unsigned char length,
                                 unsigned char *frame);
 static void cmdGetMemContents(unsigned char status, unsigned char length,
@@ -122,6 +125,7 @@ void cmdSetup(void)
     for( i = 0; i < MAX_CMD_FUNC_SIZE; ++i ) cmd_func[i] = NULL;
 
     cmd_func[CMD_SET_MOTOR_SPEED]      = &cmdSetMotorSpeed;
+    cmd_func[CMD_ERASE_MEM_CONTENTS]   = &cmdEraseMemContents;
     cmd_func[CMD_RECORD_SENSOR_DUMP]   = &cmdRecordSensorDump;
     cmd_func[CMD_GET_MEM_CONTENTS]     = &cmdGetMemContents;
     cmd_func[CMD_RUN_GYRO_CALIB]       = &cmdRunGyroCalib;
@@ -167,20 +171,13 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length,
     mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
 }
 
-static void cmdRecordSensorDump (unsigned char status, unsigned char length,
+static void cmdEraseMemContents (unsigned char status, unsigned char length,
                                  unsigned char *frame)
 {
-    unsigned int  samples          = frame[0] + (frame[1] << 8),
-                  count            = 0,
-                  mem_byte         = 0,
-                  mem_page         = 0x80,
-                  mem_page_max     = mem_page + samples/3 + 0x80,
-                  mem_sector       = mem_page,
-                  millis_factor    = sclockGetMillisFactor();
-    unsigned long next_sample_time = sclockGetLocalTicks();
-    static unsigned char buffer    = 1;
-
-    CamRow row_buff;
+    unsigned int  samples      = frame[0] + (frame[1] << 8),
+                  mem_page     = 0x80,
+                  mem_page_max = mem_page + samples/3 + 0x80,
+                  mem_sector   = mem_page;
 
     // Erase as many memory sectors as needed
     // TODO (fgb) : adapt to any number of samples, not only mult of 3
@@ -193,11 +190,25 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
     } while (mem_sector < mem_page_max);
 
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
+}
 
-    camStart(); // Enable camera capture interrupt
+static void cmdRecordSensorDump (unsigned char status, unsigned char length,
+                                 unsigned char *frame)
+{
+    unsigned int  samples          = frame[0] + (frame[1] << 8),
+                  count            = 0,
+                  mem_byte         = 0,
+                  mem_page         = 0x80,
+                  millis_factor    = sclockGetMillisFactor();
+    unsigned long next_sample_time = sclockGetLocalTicks();
+    static unsigned char buffer    = 1;
+
+    CamRow row_buff;
 
     // Dump sensor data to memory
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 1;
+
+    camStart(); // Enable camera capture interrupt
 
     do
     {
