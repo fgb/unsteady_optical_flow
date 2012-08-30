@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (c) 2010-2012, Regents of the University of California
 # All rights reserved.
@@ -59,7 +59,7 @@ def main():
     do_run_robot = 1
 
     # Construct filename
-    path     = os.path.expanduser('~/Research/Data/unsteadyOF/gyro_filter/vamp/')
+    path     = os.path.expanduser('~/Dropbox/tunnel/')
     name     = 'run'
     datetime = time.localtime()
     dt_str   = time.strftime('%Y.%m.%d_%H.%M.%S', datetime)
@@ -70,7 +70,8 @@ def main():
     src_pan   = '0x1100'
     src_addr  = '0x1101'
     dest_addr = '\x11\x02'
-    port      = '/dev/tty.usbserial-A700ePgy'  # Basestation
+    #port      = '/dev/tty.usbserial-A700ePgy'  # Basestation (osx)
+    port      = '/dev/ttyUSB0'                 # Basestation (linux)
     baud      = 230400
     #port      = '/dev/tty.usbserial-A700eYvL' # XBee
     #baud      = 57600
