@@ -84,8 +84,9 @@ def main():
     cmd['GET_GYRO_CALIB_PARAM'] = 0x0e
 
     # Data
-    data['fs']         = 1000.
-    data['samples']    = 6000 # (max is 0xFFFF, multiple of 3)
+    data['fs']         = 1000. # [Hz]
+    data['t']          = 6     # [s]
+    data['samples']    = int(data['t'] * data['fs']) # (max is 0xFFFF, multiple of 3)
     data['packet_cnt'] = 0
     data['sample_cnt'] = 0
     data['dump']       = []
