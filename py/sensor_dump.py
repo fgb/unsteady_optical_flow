@@ -32,13 +32,15 @@
 #
 # by Fernando L. Garcia Bermudez and Stanley S. Baek
 #
-# v.0.4
+# v.0.5
 #
 # Revisions:
 #  Fernando L. Garcia Bermudez      2010-9-11   Initial release.
 #  w/Stanley S. Baek                2011-3-4    Switch to ZigBee interface.
 #  Humphrey Hu                      2012-2-3    Updated to newer libraries
 #                                               and slight restructuring.
+#  Fernando L. Garcia Bermudez      2012-8-29   Add synced Vicon streaming.
+#  w/Mallory Tayson-Frederick
 #
 # Notes:
 #  - This file is derived from xboptflow.py, by Stanley S. Baek.
@@ -47,6 +49,10 @@
 import sys, os, time, struct, traceback
 import numpy as np
 from imageproc_py import radio, payload
+
+import roslib; roslib.load_manifest('geometry_msgs')
+import rospy
+from geometry_msgs.msg import TransformStamped
 
 # Global Declarations
 data = {}
@@ -101,10 +107,23 @@ def main():
     data['row_valid']  = np.zeros((data['samples'], 1),   dtype=np.uint8)
     data['row']        = np.zeros((data['samples'], 152), dtype=np.uint8)
     data['dcval']      = 90.
+    data['fs_v']       = 120. # [Hz]
+    data['t_v']        = data['t'] + 4 # [s]
+    data['samples_v']  = int(data['t_v'] * data['fs_v'])
+    data['sample_v_cnt'] = 0
+    data['ts_v']       = np.zeros((data['samples_v'], 2))
+    data['pos_v']      = np.zeros((data['samples_v'], 3))
+    data['qorn_v']     = np.zeros((data['samples_v'], 4))
+    data['do_capture_vicon'] = False
+
 
     # Gyro scaling factors
     GYRO_LSB2DEG = 0.0695652174  # 14.375 LSB/(deg/s)
     GYRO_LSB2RAD = 0.00121414209
+
+    # Subscribe to Vicon stream
+    rospy.init_node('sensor_dump')
+    rospy.Subscriber('/vicon/vamp/Body', TransformStamped, vicon_callback);
 
     # Establish communication link
     wrl = radio.radio(port, baud, received)
@@ -123,10 +142,11 @@ def main():
         print('I: Erasing memory contents...')
         wrl.send(dest_addr, 0, cmd['ERASE_MEM_CONTENTS'],                     \
                                             struct.pack('<H', data['samples']))
-        time.sleep(3)
+        time.sleep(6)
 
         # Update duty cycle
         raw_input('Q: To start the run, please [PRESS ANY KEY]')
+        data['do_capture_vicon'] = True
         wrl.send(dest_addr, 0, cmd['SET_MOTOR_SPEED'],                      \
                                             struct.pack('<f', data['dcval']))
         print('I: Setting motor to desired duty cycle...')
@@ -145,6 +165,7 @@ def main():
 
     # Request memory contents
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
+    data['do_capture_vicon'] = False
     print('I: Requesting memory contents...')
     wrl.send(dest_addr, 0, cmd['GET_MEM_CONTENTS'],                          \
         struct.pack('<3H', 0x80, 0x80 + int(np.ceil(data['samples']/3.)), 44))
@@ -199,6 +220,20 @@ def received(packet):
         print('E: Invalid packet received! Appending to data dump.')
         data['dump'].append([pkt_status, pkt_type, pkt_data])
 
+def vicon_callback(packet_v):
+    cnt_v = data['sample_v_cnt']
+    if data['do_capture_vicon'] and (cnt_v < data['samples_v']):
+        data['ts_v'][cnt_v]   = [packet_v.header.stamp.secs, \
+                                 packet_v.header.stamp.nsecs]
+        data['pos_v'][cnt_v]  = [packet_v.transform.translation.x, \
+                                 packet_v.transform.translation.y, \
+                                 packet_v.transform.translation.z]
+        data['qorn_v'][cnt_v] = [packet_v.transform.rotation.x, \
+                                 packet_v.transform.rotation.y, \
+                                 packet_v.transform.rotation.z, \
+                                 packet_v.transform.rotation.w]
+        data['sample_v_cnt'] += 1
+
 ### Exception handling
 
 if __name__ == '__main__':
@@ -209,6 +244,8 @@ if __name__ == '__main__':
         print('\nI: SystemExit: ' + str(e))
     except KeyboardInterrupt:
         print('\nI: KeyboardInterrupt')
+    except rospy.ROSInterruptException:
+        pass
     except Exception as e:
         print('\nE: Unexpected exception!\n' + str(e))
         traceback.print_exc()
