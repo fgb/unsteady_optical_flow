@@ -84,7 +84,7 @@ def main():
 
     # Data
     data['fs']         = 1000.
-    data['samples']    = 3000 # (max is 0xFFFF, multiple of 3)
+    data['samples']    = 6000 # (max is 0xFFFF, multiple of 3)
     data['packet_cnt'] = 0
     data['sample_cnt'] = 0
     data['dump']       = []
@@ -98,7 +98,7 @@ def main():
     data['row_num']    = np.zeros((data['samples'], 1),   dtype=np.uint8)
     data['row_valid']  = np.zeros((data['samples'], 1),   dtype=np.uint8)
     data['row']        = np.zeros((data['samples'], 152), dtype=np.uint8)
-    data['dcval']      = 80.
+    data['dcval']      = 90.
 
     # Gyro scaling factors
     GYRO_LSB2DEG = 0.0695652174  # 14.375 LSB/(deg/s)
@@ -128,6 +128,7 @@ def main():
         wrl.send(dest_addr, 0, cmd['SET_MOTOR_SPEED'],                      \
                                             struct.pack('<f', data['dcval']))
         print('I: Setting motor to desired duty cycle...')
+        time.sleep(2)
 
         # Request sensor dump to memory
         print('I: Requesting a sensor dump into memory...')
