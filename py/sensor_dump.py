@@ -66,10 +66,9 @@ def main():
 
     # Construct filename
     path     = os.path.expanduser('~/Dropbox/tunnel/')
-    name     = 'run'
     datetime = time.localtime()
     dt_str   = time.strftime('%Y.%m.%d_%H.%M.%S', datetime)
-    root = path + dt_str + '_' + name
+    root     = path + dt_str
     print('I: Experimental data will be saved to ' + root + '*')
 
     # Radio settings
