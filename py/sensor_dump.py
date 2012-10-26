@@ -155,7 +155,7 @@ def main():
         print('I: Requesting a sensor dump into memory...')
         wrl.send(dest_addr, 0, cmd['RECORD_SENSOR_DUMP'],                     \
                                             struct.pack('<H', data['samples']))
-        time.sleep( data['samples'] / data['fs'] + 1 )
+        time.sleep( data['t'] + 1 )
 
         # Stop motor <-- done automatically halfway through sensor dump
         #print('I: Stopping motor...')
