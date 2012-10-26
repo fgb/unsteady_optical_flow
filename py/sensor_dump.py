@@ -50,9 +50,9 @@ import sys, os, time, struct, traceback
 import numpy as np
 from imageproc_py import radio, payload
 
-import roslib; roslib.load_manifest('geometry_msgs')
-import rospy
-from geometry_msgs.msg import TransformStamped
+#import roslib; roslib.load_manifest('vicon_bridge')
+#import rospy
+#from geometry_msgs.msg import TransformStamped
 
 # Global Declarations
 data = {}
@@ -65,7 +65,8 @@ def main():
     do_run_robot = 1
 
     # Construct filename
-    path     = os.path.expanduser('~/Dropbox/tunnel/')
+    path     = os.path.expanduser('~/Research/Data/unsteadyOF/gyro_filter/wand/')
+    #path     = os.path.expanduser('~/Dropbox/tunnel/')
     datetime = time.localtime()
     dt_str   = time.strftime('%Y.%m.%d_%H.%M.%S', datetime)
     root     = path + dt_str
@@ -75,8 +76,8 @@ def main():
     src_pan   = '0x1100'
     src_addr  = '0x1101'
     dest_addr = '\x11\x02'
-    #port      = '/dev/tty.usbserial-A700ePgy'  # Basestation (osx)
-    port      = '/dev/ttyUSB0'                 # Basestation (linux)
+    port      = '/dev/tty.usbserial-A700ePgy'  # Basestation (osx)
+    #port      = '/dev/ttyUSB0'                 # Basestation (linux)
     baud      = 230400
     #port      = '/dev/tty.usbserial-A700eYvL' # XBee
     #baud      = 57600
@@ -105,7 +106,7 @@ def main():
     data['row_num']    = np.zeros((data['samples'], 1),   dtype=np.uint8)
     data['row_valid']  = np.zeros((data['samples'], 1),   dtype=np.uint8)
     data['row']        = np.zeros((data['samples'], 152), dtype=np.uint8)
-    data['dcval']      = 90.
+    data['dcval']      = 0.
     data['fs_v']       = 120. # [Hz]
     data['t_v']        = data['t'] + 4 # [s]
     data['samples_v']  = int(data['t_v'] * data['fs_v'])
@@ -121,8 +122,8 @@ def main():
     GYRO_LSB2RAD = 0.00121414209
 
     # Subscribe to Vicon stream
-    rospy.init_node('sensor_dump')
-    rospy.Subscriber('/vicon/vamp/Body', TransformStamped, vicon_callback);
+    #rospy.init_node('sensor_dump')
+    #rospy.Subscriber('/vicon/vamp/Body', TransformStamped, vicon_callback);
 
     # Establish communication link
     wrl = radio.radio(port, baud, received)
@@ -219,19 +220,19 @@ def received(packet):
         print('E: Invalid packet received! Appending to data dump.')
         data['dump'].append([pkt_status, pkt_type, pkt_data])
 
-def vicon_callback(packet_v):
-    cnt_v = data['sample_v_cnt']
-    if data['do_capture_vicon'] and (cnt_v < data['samples_v']):
-        data['ts_v'][cnt_v]   = [packet_v.header.stamp.secs, \
-                                 packet_v.header.stamp.nsecs]
-        data['pos_v'][cnt_v]  = [packet_v.transform.translation.x, \
-                                 packet_v.transform.translation.y, \
-                                 packet_v.transform.translation.z]
-        data['qorn_v'][cnt_v] = [packet_v.transform.rotation.x, \
-                                 packet_v.transform.rotation.y, \
-                                 packet_v.transform.rotation.z, \
-                                 packet_v.transform.rotation.w]
-        data['sample_v_cnt'] += 1
+#def vicon_callback(packet_v):
+#    cnt_v = data['sample_v_cnt']
+#    if data['do_capture_vicon'] and (cnt_v < data['samples_v']):
+#        data['ts_v'][cnt_v]   = [packet_v.header.stamp.secs, \
+#                                 packet_v.header.stamp.nsecs]
+#        data['pos_v'][cnt_v]  = [packet_v.transform.translation.x, \
+#                                 packet_v.transform.translation.y, \
+#                                 packet_v.transform.translation.z]
+#        data['qorn_v'][cnt_v] = [packet_v.transform.rotation.w, \
+#                                 packet_v.transform.rotation.x, \
+#                                 packet_v.transform.rotation.y, \
+#                                 packet_v.transform.rotation.z, ]
+#        data['sample_v_cnt'] += 1
 
 ### Exception handling
 
@@ -243,8 +244,8 @@ if __name__ == '__main__':
         print('\nI: SystemExit: ' + str(e))
     except KeyboardInterrupt:
         print('\nI: KeyboardInterrupt')
-    except rospy.ROSInterruptException:
-        pass
+    #except rospy.ROSInterruptException:
+    #    pass
     except Exception as e:
         print('\nE: Unexpected exception!\n' + str(e))
         traceback.print_exc()
