@@ -198,9 +198,8 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
     unsigned int  samples          = frame[0] + (frame[1] << 8),
                   count            = 0,
                   mem_byte         = 0,
-                  mem_page         = 0x80,
-                  millis_factor    = sclockGetMillisFactor();
-    unsigned long next_sample_time = sclockGetLocalTicks();
+                  mem_page         = 0x80;
+    unsigned long next_sample_time = sclockGetTime();
     static unsigned char buffer    = 1;
 
     CamRow row_buff;
@@ -212,7 +211,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
 
     do
     {
-        if (sclockGetLocalTicks() > next_sample_time)
+        if (sclockGetTime() > next_sample_time)
         {
             // Capture sensor sample
             if (cambuffHasNewRow())                         // Camera
@@ -230,10 +229,10 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
                 memset(sample.row, 0, IM_COLS);
             }
 
-            sample.gyro_ts = sclockGetLocalTicks();         // Gyroscope
+            sample.gyro_ts = sclockGetTime();         // Gyroscope
             gyroGetXYZ(sample.gyro);
 
-            sample.bemf_ts = sclockGetLocalTicks();         // Back-EMF
+            sample.bemf_ts = sclockGetTime();         // Back-EMF
             sample.bemf    = ADC1BUF0;
 
             sample.id      = count;                         // Sample #
@@ -253,7 +252,7 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
             // Stop motor while still sampling, to capture final glide/crash
             if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
-            next_sample_time += millis_factor; // 1 KHz sampling
+            next_sample_time += 1000; // 1 KHz sampling
             count++;
         }
     } while (count < samples);
