@@ -75,7 +75,7 @@ int main(void) {
     SwitchClocks();
     sclockSetup();
 
-    spicSetup();
+    spicSetupChannel1();
     ppoolInit();
     radioInit(40, 10);
     radioSetChannel(0x16);
