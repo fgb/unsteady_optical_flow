@@ -65,7 +65,7 @@ def main():
     do_run_robot = 1
 
     # Construct filename
-    path     = os.path.expanduser('~/Research/Data/unsteadyOF/gyro_filter/wand/')
+    path     = os.path.expanduser('~/Research/Data/tests/sensorDump/')
     #path     = os.path.expanduser('~/Dropbox/tunnel/')
     datetime = time.localtime()
     dt_str   = time.strftime('%Y.%m.%d_%H.%M.%S', datetime)
