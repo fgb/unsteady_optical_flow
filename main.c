@@ -82,7 +82,6 @@ int main(void) {
     radioSetSrcPanID(0x1100);
     radioSetSrcAddr(0x1102);
 
-    spicSetupChannel2();
     dfmemSetup();
     ovcamSetup();
     camSetup();
