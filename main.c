@@ -43,7 +43,7 @@
 #include "init_default.h"
 #include "init.h"       // only used for SetupADC() for bemf
 #include "battery.h"
-#include "interrupts.h" // for address trap
+#include "interrupts.h" // only used for address trap
 #include "cmd.h"
 #include "motor_ctrl.h"
 #include "led.h"
@@ -51,6 +51,7 @@
 
 #include "spi_controller.h"
 #include "ppool.h"
+#include "radio_settings.h"
 #include "radio.h"
 
 #include "dfmem.h"
@@ -77,10 +78,10 @@ int main(void) {
 
     spicSetupChannel1();
     ppoolInit();
-    radioInit(40, 10);
-    radioSetChannel(0x16);
-    radioSetSrcPanID(0x1100);
-    radioSetSrcAddr(0x1102);
+    radioInit(TXPQ_MAX_SIZE, RXPQ_MAX_SIZE);
+    radioSetChannel(MY_CHAN);
+    radioSetSrcPanID(PAN_ID);
+    radioSetSrcAddr(SRC_ADDR);
 
     dfmemSetup();
     ovcamSetup();
