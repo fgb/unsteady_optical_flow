@@ -124,21 +124,18 @@ def main():
     #wrl.setSrcPan(p.src_pan)
     #wrl.setSrcAddr(p.src_addr)
 
-    # Run robot
     if p.do_run_robot:
-        # Get gyro calibration data
-        wrl.send(p.dest_addr, 0, p.cmd_run_gyro_calib, struct.pack('<H', 2000));
-        print('I: Running gyro calibration...')
-        time.sleep(2)
-        wrl.send(p.dest_addr, 0, p.cmd_get_gyro_calib_param, ' ');
 
-        # Erase memory contents
+        print('I: Running gyro calibration...')
+        wrl.send(p.dest_addr, 0, p.cmd_run_gyro_calib, struct.pack('<H', 2000))
+        time.sleep(2)
+        wrl.send(p.dest_addr, 0, p.cmd_get_gyro_calib_param, ' ')
+
         print('I: Erasing memory contents...')
         wrl.send(p.dest_addr, 0, p.cmd_erase_mem_contents, \
                                                 struct.pack('<H', d.samples))
         time.sleep(6)
 
-        # Update duty cycle
         raw_input('Q: To start the run, please [PRESS ANY KEY]')
         d.do_capture_vicon = True
         wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, \
@@ -146,18 +143,15 @@ def main():
         print('I: Setting motor to desired duty cycle...')
         time.sleep(2)
 
-        # Request sensor dump to memory
         print('I: Requesting a sensor dump into memory...')
         wrl.send(p.dest_addr, 0, p.cmd_record_sensor_dump, \
                                                 struct.pack('<H', d.samples))
         time.sleep( p.t + 1 )
 
-        # Stop motor <-- done automatically halfway through sensor dump
-        #print('I: Stopping motor...')
+        #print('I: Stopping motor...') # automatically done halfway through dump
         #wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, struct.pack('<f', 0))
         #time.sleep(0.5)
 
-    # Request memory contents
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
     d.do_capture_vicon = False
     print('I: Requesting memory contents...')
@@ -184,7 +178,6 @@ def main():
                 do_save[key] = locals()[key]
     np.savez_compressed(datafile_npz, **do_save)
     print('I: Saved session to ' + os.path.basename(datafile_npz))
-
 
 def received(packet):
     global p, d
