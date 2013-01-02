@@ -46,7 +46,7 @@
 #  - This file is derived from xboptflow.py, by Stanley S. Baek.
 #
 
-import sys, os, time, struct, traceback, logging as lg, argparse, pickle
+import sys, os, time, struct, traceback, logging as lg, argparse, pickle, shelve
 import numpy as np
 from imageproc_py import radio, payload, utils
 
@@ -57,10 +57,6 @@ from imageproc_py import radio, payload, utils
 def main():
     global p, d
 
-    # Session storage parameters
-    do_save     = {}
-    do_not_save = dir() # any vars created above won't be saved
-
     # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', metavar='f', type=str, nargs=1,
@@ -68,7 +64,8 @@ def main():
     configfile = parser.parse_args().filename[0]
 
     # Load parameters from configuration file
-    p = utils.Bunch(utils.load_config(configfile))
+    params = utils.load_config(configfile)
+    p      = utils.Bunch(params)
 
     # Construct filename
     root     = os.path.expanduser(p.root)
@@ -163,21 +160,17 @@ def main():
     print('I: ' + str(d.packet_cnt) + ' packets received, including ' + \
                                             str(d.sample_cnt) + ' samples.')
 
-    # Save data to numpy zip file
-    datafile_npz = datafile + '_session.npz'
+    # Shelve session information
+    datafile_shelf = datafile + '_session.shelf'
+    shelf = shelve.open(datafile_shelf)
     for key in dir():
-        if key not in do_not_save:
-            if key not in do_save:
-                try:
-                    dump = pickle.dumps(locals()[key])
-                    do_save[key] = locals()[key]
-                except:
-                    print('W: ' + key + ' will not be saved!')
-                    do_not_save.append(key)
-            else:
-                do_save[key] = locals()[key]
-    np.savez_compressed(datafile_npz, **do_save)
-    print('I: Saved session to ' + os.path.basename(datafile_npz))
+        try:
+            dump = pickle.dumps(locals()[key])
+            shelf[key] = locals()[key]
+        except:
+            print('W: ' + key + ' will not be saved!')
+    shelf.close()
+    print('I: Saved session to ' + os.path.basename(datafile_shelf))
 
 def received(packet):
     global p, d
