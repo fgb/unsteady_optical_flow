@@ -145,6 +145,7 @@ def main():
                                                 struct.pack('<H', d.samples))
         time.sleep( p.t + 1 )
 
+        #raw_input('Q: To stop the run, please [PRESS ANY KEY]')
         #print('I: Stopping motor...') # automatically done halfway through dump
         #wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, struct.pack('<f', 0))
         #time.sleep(0.5)
