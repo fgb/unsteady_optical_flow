@@ -14,8 +14,8 @@
 #define MC_CHANNEL_PWM3     3
 #define MC_CHANNEL_PWM4     4
 
-#define MC_STEER_MODE_DISC  0   
-#define MC_STEER_MODE_CONT  1   
+#define MC_STEER_MODE_DISC  0
+#define MC_STEER_MODE_CONT  1
 
 #define MC_STEER_LEFT       -1.0
 #define MC_STEER_RIGHT      1.0

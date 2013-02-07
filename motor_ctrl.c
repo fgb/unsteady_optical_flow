@@ -69,13 +69,13 @@ void mcSteer(float value) {
         }
 
     } else {
-        if (value > 0) { 
+        if (value > 0) {
             NO_TURN;
             RIGHT_TURN;
-        } else if (value < 0) { 
+        } else if (value < 0) {
             NO_TURN;
             LEFT_TURN;
-        } else { 
+        } else {
             NO_TURN;
         }
     }
@@ -102,10 +102,10 @@ void mcSetSteerMode(unsigned char mode) {
 static void mcSetupPeripheral(void) {
 
     // For 1KHz at MIPS == 40
-    pwmPeriod = 624; 
-    
+    pwmPeriod = 624;
+
     ConfigIntMCPWM(PWM_INT_DIS & PWM_FLTA_DIS_INT & PWM_FLTB_DIS_INT);
-    
+
     PDC1 = 0;   // duty cycle = 0
     PDC2 = 0;   // duty cycle = 0
     PDC3 = 0;   // duty cycle = 0
