@@ -39,9 +39,9 @@
 #define __CMD_H
 
 
-void cmdSetup (void);
+void cmd_setup (void);
 
-void cmdHandleRadioRxBuffer (void);
+void cmd_handle_radio_rx_buffer (void);
 
 
 #endif // __CMD_H

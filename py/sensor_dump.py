@@ -130,13 +130,13 @@ def main():
     if p.do_run_robot:
 
         print('I: Running gyro calibration...')
-        wrl.send(p.dest_addr, 0, p.cmd_run_gyro_calib, struct.pack('<H', 2000))
+        wrl.send(p.dest_addr, 0, p.cmd_calibrate_gyro, struct.pack('<H', 2000))
         time.sleep(2)
-        wrl.send(p.dest_addr, 0, p.cmd_get_gyro_calib_param, ' ')
+        wrl.send(p.dest_addr, 0, p.cmd_get_gyro_calibration, ' ')
 
         print('I: Erasing memory contents...')
-        wrl.send(p.dest_addr, 0, p.cmd_erase_mem_contents, \
         # TODO (fgb) : Request n seconds instead of samples
+        wrl.send(p.dest_addr, 0, p.cmd_erase_memory, \
                                                 struct.pack('<H', d.samples))
         time.sleep(6)
 
@@ -161,8 +161,8 @@ def main():
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
     do_capture_vicon = False
     print('I: Requesting memory contents...')
-    wrl.send(p.dest_addr, 0, p.cmd_get_mem_contents, \
     # TODO (fgb) : Get rid of statically allocated memory locations
+    wrl.send(p.dest_addr, 0, p.cmd_read_memory, \
             struct.pack('<3H', 0x80, 0x80 + int(np.ceil(d.samples/3.)), 44))
     time.sleep(0.5)
 
@@ -190,9 +190,9 @@ def received(packet):
     pkt_type   = pld.type
     pkt_data   = pld.data
 
-    if (pkt_type == p.cmd_get_gyro_calib_param):
+    if ( pkt_type == p.cmd_get_gyro_calibration ):
         d.gyro_calib = struct.unpack('<3f', pkt_data)
-    elif (pkt_type == p.cmd_get_mem_contents):
+    elif ( pkt_type == p.cmd_read_memory ):
         d.packet_cnt += 1
         cnt = d.sample_cnt
         pkt_index = pkt_status % 4

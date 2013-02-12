@@ -60,11 +60,11 @@
 
 /* Commands */
 #define CMD_SET_MOTOR_SPEED      0
-#define CMD_ERASE_MEM_CONTENTS   3
+#define CMD_ERASE_MEMORY         3
 #define CMD_RECORD_SENSOR_DUMP   4
-#define CMD_GET_MEM_CONTENTS     5
-#define CMD_RUN_GYRO_CALIB       0x0d
-#define CMD_GET_GYRO_CALIB_PARAM 0x0e
+#define CMD_READ_MEMORY          5
+#define CMD_CALIBRATE_GYRO       0x0d
+#define CMD_GET_GYRO_CALIBRATION 0x0e
 #define MAX_CMD_FUNC_SIZE        0xFF
 
 /* Capture Parameters */
@@ -100,45 +100,45 @@ union {
  *          Declaration of private functions
  ---------------------------------------------------------------------------*/
 
-static void     cmdSetMotorSpeed (unsigned char status,
-                                  unsigned char length,
-                                  unsigned char *frame);
-static void  cmdEraseMemContents (unsigned char status,
-                                  unsigned char length,
-                                  unsigned char *frame);
-static void  cmdRecordSensorDump (unsigned char status,
-                                  unsigned char length,
-                                  unsigned char *frame);
-static void    cmdGetMemContents (unsigned char status,
-                                  unsigned char length,
-                                  unsigned char *frame);
-static void      cmdRunGyroCalib (unsigned char status,
-                                  unsigned char length,
-                                  unsigned char *frame);
-static void cmdGetGyroCalibParam (unsigned char status,
-                                  unsigned char length,
-                                  unsigned char *frame);
+static void      cmd_set_motor_speed (unsigned char status,
+                                      unsigned char length,
+                                      unsigned char *frame);
+static void         cmd_erase_memory (unsigned char status,
+                                      unsigned char length,
+                                      unsigned char *frame);
+static void   cmd_record_sensor_dump (unsigned char status,
+                                      unsigned char length,
+                                      unsigned char *frame);
+static void          cmd_read_memory (unsigned char status,
+                                      unsigned char length,
+                                      unsigned char *frame);
+static void       cmd_calibrate_gyro (unsigned char status,
+                                      unsigned char length,
+                                      unsigned char *frame);
+static void cmd_get_gyro_calibration (unsigned char status,
+                                      unsigned char length,
+                                      unsigned char *frame);
 
 
 /*-----------------------------------------------------------------------------
  *          Public functions
 -----------------------------------------------------------------------------*/
 
-void cmdSetup (void)
+void cmd_setup (void)
 {
     unsigned int i;
 
     for ( i = 0; i < MAX_CMD_FUNC_SIZE; ++i ) cmd_func[i] = NULL;
 
-    cmd_func[CMD_SET_MOTOR_SPEED]      = &cmdSetMotorSpeed;
-    cmd_func[CMD_ERASE_MEM_CONTENTS]   = &cmdEraseMemContents;
-    cmd_func[CMD_RECORD_SENSOR_DUMP]   = &cmdRecordSensorDump;
-    cmd_func[CMD_GET_MEM_CONTENTS]     = &cmdGetMemContents;
-    cmd_func[CMD_RUN_GYRO_CALIB]       = &cmdRunGyroCalib;
-    cmd_func[CMD_GET_GYRO_CALIB_PARAM] = &cmdGetGyroCalibParam;
+    cmd_func[CMD_SET_MOTOR_SPEED]      = &cmd_set_motor_speed;
+    cmd_func[CMD_ERASE_MEMORY]         = &cmd_erase_memory;
+    cmd_func[CMD_RECORD_SENSOR_DUMP]   = &cmd_record_sensor_dump;
+    cmd_func[CMD_READ_MEMORY]          = &cmd_read_memory;
+    cmd_func[CMD_CALIBRATE_GYRO]       = &cmd_calibrate_gyro;
+    cmd_func[CMD_GET_GYRO_CALIBRATION] = &cmd_get_gyro_calibration;
 }
 
-void cmdHandleRadioRxBuffer(void)
+void cmd_handle_radio_rx_buffer (void)
 {
     MacPacket packet;
     Payload pld;
@@ -166,9 +166,9 @@ void cmdHandleRadioRxBuffer(void)
  *          Private functions
 -----------------------------------------------------------------------------*/
 
-static void cmdSetMotorSpeed (unsigned char status,
-                              unsigned char length,
-                              unsigned char *frame)
+static void cmd_set_motor_speed (unsigned char status,
+                                 unsigned char length,
+                                 unsigned char *frame)
 {
     unsigned char chr_test[4];
     float *duty_cycle = (float*)chr_test;
@@ -181,8 +181,9 @@ static void cmdSetMotorSpeed (unsigned char status,
     mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
 }
 
-static void cmdEraseMemContents (unsigned char status, unsigned char length,
-                                 unsigned char *frame)
+static void cmd_erase_memory (unsigned char status,
+                              unsigned char length,
+                              unsigned char *frame)
 {
     // TODO (fgb) : Adapt to any number of samples, not only mult of 3
     unsigned int  samples      = frame[0] + (frame[1] << 8),
@@ -202,9 +203,9 @@ static void cmdEraseMemContents (unsigned char status, unsigned char length,
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdRecordSensorDump (unsigned char status,
-                                 unsigned char length,
-                                 unsigned char *frame)
+static void cmd_record_sensor_dump (unsigned char status,
+                                    unsigned char length,
+                                    unsigned char *frame)
 {
     unsigned int  samples          = frame[0] + (frame[1] << 8),
                   count            = 0,
@@ -273,9 +274,9 @@ static void cmdRecordSensorDump (unsigned char status,
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdGetMemContents (unsigned char status,
-                               unsigned char length,
-                               unsigned char *frame)
+static void cmd_read_memory (unsigned char status,
+                             unsigned char length,
+                             unsigned char *frame)
 {
     unsigned int page_start = frame[0] + (frame[1] << 8),
                  page_end   = frame[2] + (frame[3] << 8),
@@ -302,7 +303,7 @@ static void cmdGetMemContents (unsigned char status,
             pld = macGetPayload(packet);
             dfmemRead(page, mem_byte, pld_size, payGetData(pld));
             paySetStatus(pld, count++);
-            paySetType(pld, CMD_GET_MEM_CONTENTS);
+            paySetType(pld, CMD_READ_MEMORY);
             while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
             mem_byte += pld_size;
         } while ( mem_byte <= (MEM_PAGE_SIZE - pld_size) );
@@ -320,9 +321,9 @@ static void cmdGetMemContents (unsigned char status,
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdRunGyroCalib (unsigned char status,
-                             unsigned char length,
-                             unsigned char *frame)
+static void cmd_calibrate_gyro (unsigned char status,
+                                unsigned char length,
+                                unsigned char *frame)
 {
     unsigned int count = frame[0] + (frame[1] << 8);
 
@@ -333,9 +334,9 @@ static void cmdRunGyroCalib (unsigned char status,
     LED_GREEN = 0; LED_ORANGE = 0;
 }
 
-static void cmdGetGyroCalibParam (unsigned char status,
-                                  unsigned char length,
-                                  unsigned char *frame)
+static void cmd_get_gyro_calibration (unsigned char status,
+                                      unsigned char length,
+                                      unsigned char *frame)
 {
     MacPacket packet;
     Payload pld;
@@ -347,7 +348,7 @@ static void cmdGetGyroCalibParam (unsigned char status,
 
     pld = macGetPayload(packet);
     paySetData(pld, 12, gyroGetCalibParam());
-    paySetType(pld, CMD_GET_GYRO_CALIB_PARAM);
+    paySetType(pld, CMD_GET_GYRO_CALIBRATION);
     paySetStatus(pld, 0);
 
     while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
