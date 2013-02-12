@@ -68,9 +68,12 @@
 #define MAX_CMD_FUNC_SIZE        0xFF
 
 /* Capture Parameters */
-#define IM_COLS                  152
-#define SAMPLE_SIZE              176
-#define MEM_PAGE_SIZE            528
+#define SAMPLING_FREQ   1000 // [Hz]
+#define SAMPLE_SIZE     176  // [bytes]
+#define IM_COLS         152
+#define MEM_PAGE_SIZE   528  // [bytes]
+#define MEM_SECTOR_SIZE 128  // [pages]
+#define MEM_PAGE_START  128
 
 
 /*-----------------------------------------------------------------------------
@@ -187,18 +190,17 @@ static void cmd_erase_memory (unsigned char status,
 {
     // TODO (fgb) : Adapt to any number of samples, not only mult of 3
     unsigned int  samples      = frame[0] + (frame[1] << 8),
-                  mem_page     = 0x80,
-                  mem_page_max = mem_page + samples/3 + 0x80,
-                  mem_sector   = mem_page;
+                  mem_page     = MEM_PAGE_START,
+                  mem_page_max = mem_page + samples/3 + MEM_SECTOR_SIZE;
 
     // Erase as many memory sectors as needed
     LED_GREEN = 0; LED_RED = 1; LED_ORANGE = 0;
 
     do
     {
-        dfmemEraseSector(mem_sector); while(!dfmemIsReady());
-        mem_sector += 0x80;
-    } while (mem_sector < mem_page_max);
+        dfmemEraseSector(mem_page); while(!dfmemIsReady());
+        mem_page += MEM_SECTOR_SIZE;
+    } while (mem_page < mem_page_max);
 
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
@@ -210,7 +212,7 @@ static void cmd_record_sensor_dump (unsigned char status,
     unsigned int  samples          = frame[0] + (frame[1] << 8),
                   count            = 0,
                   mem_byte         = 0,
-                  mem_page         = 0x80;
+                  mem_page         = MEM_PAGE_START;
     unsigned long next_sample_time = sclockGetTime();
     static unsigned char buffer    = 1;
 
@@ -264,7 +266,7 @@ static void cmd_record_sensor_dump (unsigned char status,
             // Stop motor while still sampling, to capture final glide/crash
             if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
-            next_sample_time += 1000; // 1 KHz sampling
+            next_sample_time += SAMPLING_FREQ;
             count++;
         }
     } while (count < samples);
