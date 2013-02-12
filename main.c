@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012, Regents of the University of California
+ * Copyright (c) 2010-2013, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,14 @@
  *
  * Image processing and control of an unsteadily moving robotic platform
  *
- * by Stanley S. Baek
+ * by Stanley S. Baek and Fernando L. Garcia Bermudez
  *
  * v.beta
  *
  * Revisions:
- *  Stanley S. Baek                 2010-7-8    Initial release
- *  w/Fernando L. Garcia Bermudez   2011-3-4    Adaptation to fgb codebase
- *  Humphrey Hu                     2012        Adaptation to latest radio.
+ *  Stanley S. Baek                 2010-7-8    Initial release.
+ *  w/Fernando L. Garcia Bermudez   2011-3-4    Adaptation to fgb codebase.
+ *  Humphrey Hu                     2012-4-13   Adaptation to latest radio.
  *
  */
 

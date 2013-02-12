@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012, Regents of the University of California
+ * Copyright (c) 2010-2013, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,14 @@
  *
  * Command queue handlers
  *
- * by Stanley S. Baek
+ * by Stanley S. Baek and Fernando L. Garcia Bermudez
  *
  * v.beta
  *
  * Revisions:
- *  Stanley S. Baek                 2010-7-10   Initial release
- *  w/Fernando L. Garcia Bermudez   2011-3-8    Adaptation to fgb codebase
- *  Humphrey Hu                     2012        Adaptation to latest radio.
+ *  Stanley S. Baek                 2010-7-10   Initial release.
+ *  w/Fernando L. Garcia Bermudez   2011-3-8    Adaptation to fgb codebase.
+ *  Humphrey Hu                     2012-4-13   Adaptation to latest radio.
  *
  */
 
@@ -100,29 +100,35 @@ union {
  *          Declaration of private functions
  ---------------------------------------------------------------------------*/
 
-static void cmdSetMotorSpeed(unsigned char status, unsigned char length,
-                             unsigned char *frame);
-static void cmdEraseMemContents(unsigned char status, unsigned char length,
-                              unsigned char *frame);
-static void cmdRecordSensorDump(unsigned char status, unsigned char length,
-                                unsigned char *frame);
-static void cmdGetMemContents(unsigned char status, unsigned char length,
-                              unsigned char *frame);
-static void cmdRunGyroCalib(unsigned char status, unsigned char length,
-                            unsigned char *frame);
-static void cmdGetGyroCalibParam(unsigned char status, unsigned char length,
-                                 unsigned char *frame);
+static void     cmdSetMotorSpeed (unsigned char status,
+                                  unsigned char length,
+                                  unsigned char *frame);
+static void  cmdEraseMemContents (unsigned char status,
+                                  unsigned char length,
+                                  unsigned char *frame);
+static void  cmdRecordSensorDump (unsigned char status,
+                                  unsigned char length,
+                                  unsigned char *frame);
+static void    cmdGetMemContents (unsigned char status,
+                                  unsigned char length,
+                                  unsigned char *frame);
+static void      cmdRunGyroCalib (unsigned char status,
+                                  unsigned char length,
+                                  unsigned char *frame);
+static void cmdGetGyroCalibParam (unsigned char status,
+                                  unsigned char length,
+                                  unsigned char *frame);
 
 
 /*-----------------------------------------------------------------------------
  *          Public functions
 -----------------------------------------------------------------------------*/
 
-void cmdSetup(void)
+void cmdSetup (void)
 {
     unsigned int i;
 
-    for( i = 0; i < MAX_CMD_FUNC_SIZE; ++i ) cmd_func[i] = NULL;
+    for ( i = 0; i < MAX_CMD_FUNC_SIZE; ++i ) cmd_func[i] = NULL;
 
     cmd_func[CMD_SET_MOTOR_SPEED]      = &cmdSetMotorSpeed;
     cmd_func[CMD_ERASE_MEM_CONTENTS]   = &cmdEraseMemContents;
@@ -138,13 +144,17 @@ void cmdHandleRadioRxBuffer(void)
     Payload pld;
     unsigned char command, status;
 
-    if ((packet = radioDequeueRxPacket()) != NULL) {
-        pld = macGetPayload(packet);
-        status = payGetStatus(pld);
+    if ( (packet = radioDequeueRxPacket()) != NULL )
+    {
+        pld     = macGetPayload(packet);
+        status  = payGetStatus(pld);
         command = payGetType(pld);
-        if(command < MAX_CMD_FUNC_SIZE) {
+
+        if ( command < MAX_CMD_FUNC_SIZE )
+        {
             cmd_func[command](status, payGetDataLength(pld), payGetData(pld));
         }
+
         radioReturnPacket(packet);
     }
 
@@ -156,9 +166,9 @@ void cmdHandleRadioRxBuffer(void)
  *          Private functions
 -----------------------------------------------------------------------------*/
 
-// Update duty cycle - Main drive (PWM1L)
-static void cmdSetMotorSpeed(unsigned char status, unsigned char length,
-                             unsigned char *frame)
+static void cmdSetMotorSpeed (unsigned char status,
+                              unsigned char length,
+                              unsigned char *frame)
 {
     unsigned char chr_test[4];
     float *duty_cycle = (float*)chr_test;
@@ -174,13 +184,13 @@ static void cmdSetMotorSpeed(unsigned char status, unsigned char length,
 static void cmdEraseMemContents (unsigned char status, unsigned char length,
                                  unsigned char *frame)
 {
+    // TODO (fgb) : Adapt to any number of samples, not only mult of 3
     unsigned int  samples      = frame[0] + (frame[1] << 8),
                   mem_page     = 0x80,
                   mem_page_max = mem_page + samples/3 + 0x80,
                   mem_sector   = mem_page;
 
     // Erase as many memory sectors as needed
-    // TODO (fgb) : adapt to any number of samples, not only mult of 3
     LED_GREEN = 0; LED_RED = 1; LED_ORANGE = 0;
 
     do
@@ -192,7 +202,8 @@ static void cmdEraseMemContents (unsigned char status, unsigned char length,
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdRecordSensorDump (unsigned char status, unsigned char length,
+static void cmdRecordSensorDump (unsigned char status,
+                                 unsigned char length,
                                  unsigned char *frame)
 {
     unsigned int  samples          = frame[0] + (frame[1] << 8),
@@ -211,10 +222,10 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
 
     do
     {
-        if (sclockGetTime() > next_sample_time)
+        if ( sclockGetTime() > next_sample_time )
         {
             // Capture sensor sample
-            if (cambuffHasNewRow())                         // Camera
+            if ( cambuffHasNewRow() )                       // Camera
             {
                 row_buff         = cambuffGetRow();
                 sample.row_ts    = row_buff->timestamp;
@@ -229,10 +240,10 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
                 memset(sample.row, 0, IM_COLS);
             }
 
-            sample.gyro_ts = sclockGetTime();         // Gyroscope
+            sample.gyro_ts = sclockGetTime();               // Gyroscope
             gyroGetXYZ(sample.gyro);
 
-            sample.bemf_ts = sclockGetTime();         // Back-EMF
+            sample.bemf_ts = sclockGetTime();               // Back-EMF
             sample.bemf    = ADC1BUF0;
 
             sample.id      = count;                         // Sample #
@@ -262,27 +273,28 @@ static void cmdRecordSensorDump (unsigned char status, unsigned char length,
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdGetMemContents(unsigned char status, unsigned char length,
-                              unsigned char *frame)
+static void cmdGetMemContents (unsigned char status,
+                               unsigned char length,
+                               unsigned char *frame)
 {
-    unsigned int start_page = frame[0] + (frame[1] << 8),
-                 end_page   = frame[2] + (frame[3] << 8),
+    unsigned int page_start = frame[0] + (frame[1] << 8),
+                 page_end   = frame[2] + (frame[3] << 8),
                  pld_size   = frame[4] + (frame[5] << 8),
                  page, mem_byte;
     unsigned char count = 0;
 
-    Payload pld;
     MacPacket packet;
+    Payload pld;
 
     // Send back memory contents
     LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 0;
 
-    for ( page = start_page; page < end_page; ++page )
+    for ( page = page_start; page < page_end; ++page )
     {
         mem_byte = 0;
         do
         {
-            radioProcess();
+            radioProcess(); // TODO (fgb) : Is this needed?
             packet = radioRequestPacket(pld_size);
             if(packet == NULL) { continue; }
             macSetDestPan(packet, PAN_ID);
@@ -295,7 +307,7 @@ static void cmdGetMemContents(unsigned char status, unsigned char length,
             mem_byte += pld_size;
         } while ( mem_byte <= (MEM_PAGE_SIZE - pld_size) );
 
-        if ((page >> 7) & 0x1)
+        if ( (page >> 7) & 0x1 )
         {
             LED_GREEN = ~LED_GREEN; LED_ORANGE = ~LED_ORANGE;
         }
@@ -308,8 +320,9 @@ static void cmdGetMemContents(unsigned char status, unsigned char length,
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
 
-static void cmdRunGyroCalib(unsigned char status, unsigned char length,
-                            unsigned char *frame)
+static void cmdRunGyroCalib (unsigned char status,
+                             unsigned char length,
+                             unsigned char *frame)
 {
     unsigned int count = frame[0] + (frame[1] << 8);
 
@@ -320,11 +333,12 @@ static void cmdRunGyroCalib(unsigned char status, unsigned char length,
     LED_GREEN = 0; LED_ORANGE = 0;
 }
 
-static void cmdGetGyroCalibParam(unsigned char status, unsigned char length,
-                                 unsigned char *frame)
+static void cmdGetGyroCalibParam (unsigned char status,
+                                  unsigned char length,
+                                  unsigned char *frame)
 {
-    Payload pld;
     MacPacket packet;
+    Payload pld;
 
     packet = radioRequestPacket(12);
     if(packet == NULL) { return; }

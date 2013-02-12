@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2010-2012, Regents of the University of California
+# Copyright (c) 2010-2013, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 #  - This file is derived from xboptflow.py, by Stanley S. Baek.
 #
 
-import sys, os, time, struct, traceback, logging as lg, argparse, pickle, shelve
+import sys, os, time, struct, traceback, logging as lg, argparse, shelve, pickle
 import numpy as np
 from imageproc_py import radio, payload, utils
 
@@ -55,7 +55,7 @@ from imageproc_py import radio, payload, utils
 #from geometry_msgs.msg import TransformStamped
 
 def main():
-    global p, d
+    global p, d, do_capture_vicon
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
@@ -64,6 +64,7 @@ def main():
     configfile = parser.parse_args().filename[0]
 
     # Load parameters from configuration file
+    # TODO (fgb) : Do we really need params and p here, or would p just suffice?
     params = utils.load_config(configfile)
     p      = utils.Bunch(params)
 
@@ -89,32 +90,37 @@ def main():
         '\nI: Session will be logged to ' + os.path.basename(datafile_log))
 
     # Data
-    data                     = {}
-    data['samples']          = int(p.t * p.fs) # (max is 0xFFFF, multiple of 3)
-    data['packet_cnt']       = 0
-    data['sample_cnt']       = 0
-    data['dump']             = []
-    data['id']               = np.zeros((data['samples'], 1),  dtype=np.uint16)
-    data['bemf_ts']          = np.zeros((data['samples'], 1),  dtype=np.uint32)
-    data['bemf']             = np.zeros((data['samples'], 1),  dtype=np.uint16)
-    data['gyro_ts']          = np.zeros((data['samples'], 1),  dtype=np.uint32)
-    data['gyro_calib']       = np.zeros((3),  dtype=np.float32)
-    data['gyro']             = np.zeros((data['samples'], 3),  dtype=np.int16)
-    data['row_ts']           = np.zeros((data['samples'], 1),  dtype=np.uint32)
-    data['row_num']          = np.zeros((data['samples'], 1),  dtype=np.uint8)
-    data['row_valid']        = np.zeros((data['samples'], 1),  dtype=np.uint8)
-    data['row']              = np.zeros((data['samples'], 152),dtype=np.uint8)
-    data['samples_v']        = int(p.t_v * p.fs_v)
-    data['sample_v_cnt']     = 0
-    data['ts_v']             = np.zeros((data['samples_v'], 2))
-    data['pos_v']            = np.zeros((data['samples_v'], 3))
-    data['qorn_v']           = np.zeros((data['samples_v'], 4))
-    data['do_capture_vicon'] = 0
-    d                        = utils.Bunch(data)
+    data = {}
+
+    data['samples']    = int(p.t * p.fs) # (max is 0xFFFF, multiple of 3)
+    data['sample_cnt'] = 0
+    data['packet_cnt'] = 0
+    data['dump']       = []
+
+    # TODO (fgb) : We should request capture settings from robot?
+    data['id']         = np.zeros((data['samples'],   1), dtype=np.uint16)
+    data['bemf_ts']    = np.zeros((data['samples'],   1), dtype=np.uint32)
+    data['bemf']       = np.zeros((data['samples'],   1), dtype=np.uint16)
+    data['gyro_ts']    = np.zeros((data['samples'],   1), dtype=np.uint32)
+    data['gyro_calib'] = np.zeros((3),                    dtype=np.float32)
+    data['gyro']       = np.zeros((data['samples'],   3), dtype=np.int16)
+    data['row_ts']     = np.zeros((data['samples'],   1), dtype=np.uint32)
+    data['row_num']    = np.zeros((data['samples'],   1), dtype=np.uint8)
+    data['row_valid']  = np.zeros((data['samples'],   1), dtype=np.uint8)
+    data['row']        = np.zeros((data['samples'], 152), dtype=np.uint8)
+
+    data['samples_v']    = int(p.t_v * p.fs_v)
+    data['sample_v_cnt'] = 0
+    data['ts_v']         = np.zeros((data['samples_v'], 2))
+    data['pos_v']        = np.zeros((data['samples_v'], 3))
+    data['qorn_v']       = np.zeros((data['samples_v'], 4))
+
+    d = utils.Bunch(data)
 
     # Subscribe to Vicon stream
     #rospy.init_node('sensor_dump')
     #rospy.Subscriber('/vicon/vamp/Body', TransformStamped, vicon_callback);
+    #do_capture_vicon = False
 
     # Establish communication link
     wrl = radio.radio(p.port, p.baud, received)
@@ -130,20 +136,22 @@ def main():
 
         print('I: Erasing memory contents...')
         wrl.send(p.dest_addr, 0, p.cmd_erase_mem_contents, \
+        # TODO (fgb) : Request n seconds instead of samples
                                                 struct.pack('<H', d.samples))
         time.sleep(6)
 
         raw_input('Q: To start the run, please [PRESS ANY KEY]')
-        d.do_capture_vicon = True
+        do_capture_vicon = True
         wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, \
                                                 struct.pack('<f', p.dcval))
         print('I: Setting motor to desired duty cycle...')
         time.sleep(2)
 
         print('I: Requesting a sensor dump into memory...')
+        # TODO (fgb) : Request n seconds instead of samples
         wrl.send(p.dest_addr, 0, p.cmd_record_sensor_dump, \
                                                 struct.pack('<H', d.samples))
-        time.sleep( p.t + 1 )
+        time.sleep(p.t + 1)
 
         #raw_input('Q: To stop the run, please [PRESS ANY KEY]')
         #print('I: Stopping motor...') # automatically done halfway through dump
@@ -151,9 +159,10 @@ def main():
         #time.sleep(0.5)
 
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
-    d.do_capture_vicon = False
+    do_capture_vicon = False
     print('I: Requesting memory contents...')
     wrl.send(p.dest_addr, 0, p.cmd_get_mem_contents, \
+    # TODO (fgb) : Get rid of statically allocated memory locations
             struct.pack('<3H', 0x80, 0x80 + int(np.ceil(d.samples/3.)), 44))
     time.sleep(0.5)
 
@@ -176,10 +185,10 @@ def main():
 def received(packet):
     global p, d
 
-    pld         = payload.Payload(packet.get('rf_data'))
-    pkt_status  = pld.status
-    pkt_type    = pld.type
-    pkt_data    = pld.data
+    pld        = payload.Payload(packet.get('rf_data'))
+    pkt_status = pld.status
+    pkt_type   = pld.type
+    pkt_data   = pld.data
 
     if (pkt_type == p.cmd_get_gyro_calib_param):
         d.gyro_calib = struct.unpack('<3f', pkt_data)
@@ -215,10 +224,10 @@ def received(packet):
         d.dump.append([pkt_status, pkt_type, pkt_data])
 
 #def vicon_callback(packet_v):
-#    globals d
+#    globals d, do_capture_vicon
 #
 #    cnt_v = d.sample_v_cnt
-#    if d.do_capture_vicon and (cnt_v < d.samples_v):
+#    if do_capture_vicon and (cnt_v < d.samples_v):
 #        d.ts_v[cnt_v]   = [packet_v.header.stamp.secs, \
 #                           packet_v.header.stamp.nsecs]
 #        d.pos_v[cnt_v]  = [packet_v.transform.translation.x, \
