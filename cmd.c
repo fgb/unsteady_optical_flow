@@ -63,9 +63,10 @@
 #define CMD_ERASE_MEMORY         3
 #define CMD_RECORD_SENSOR_DUMP   4
 #define CMD_READ_MEMORY          5
+#define CMD_GET_SETTINGS         6
 #define CMD_CALIBRATE_GYRO       0x0d
 #define CMD_GET_GYRO_CALIBRATION 0x0e
-#define MAX_CMD_FUNC_SIZE        0xFF
+#define MAX_NUM_COMMANDS         0xFF
 
 /* Capture Parameters */
 #define SAMPLING_FREQ   1000 // [Hz]
@@ -80,8 +81,9 @@
  *          Private declarations
 -----------------------------------------------------------------------------*/
 
-void (*cmd_func[MAX_CMD_FUNC_SIZE])(unsigned char, unsigned char,
-                                    unsigned char*);
+void (*cmd_func[MAX_NUM_COMMANDS])(unsigned char,
+                                   unsigned char,
+                                   unsigned char*);
 
 union {
     struct {
@@ -115,6 +117,9 @@ static void   cmd_record_sensor_dump (unsigned char status,
 static void          cmd_read_memory (unsigned char status,
                                       unsigned char length,
                                       unsigned char *frame);
+static void         cmd_get_settings (unsigned char status,
+                                      unsigned char length,
+                                      unsigned char *frame);
 static void       cmd_calibrate_gyro (unsigned char status,
                                       unsigned char length,
                                       unsigned char *frame);
@@ -131,12 +136,13 @@ void cmd_setup (void)
 {
     unsigned int i;
 
-    for ( i = 0; i < MAX_CMD_FUNC_SIZE; ++i ) cmd_func[i] = NULL;
+    for ( i = 0; i < MAX_NUM_COMMANDS; ++i ) cmd_func[i] = NULL;
 
     cmd_func[CMD_SET_MOTOR_SPEED]      = &cmd_set_motor_speed;
     cmd_func[CMD_ERASE_MEMORY]         = &cmd_erase_memory;
     cmd_func[CMD_RECORD_SENSOR_DUMP]   = &cmd_record_sensor_dump;
     cmd_func[CMD_READ_MEMORY]          = &cmd_read_memory;
+    cmd_func[CMD_GET_SETTINGS]         = &cmd_get_settings;
     cmd_func[CMD_CALIBRATE_GYRO]       = &cmd_calibrate_gyro;
     cmd_func[CMD_GET_GYRO_CALIBRATION] = &cmd_get_gyro_calibration;
 }
@@ -153,7 +159,7 @@ void cmd_handle_radio_rx_buffer (void)
         status  = payGetStatus(pld);
         command = payGetType(pld);
 
-        if ( command < MAX_CMD_FUNC_SIZE )
+        if ( command < MAX_NUM_COMMANDS )
         {
             cmd_func[command](status, payGetDataLength(pld), payGetData(pld));
         }
@@ -321,6 +327,34 @@ static void cmd_read_memory (unsigned char status,
     LED_GREEN = 1; LED_RED = 1; LED_ORANGE = 1;
     delay_ms(2000);
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
+}
+
+static void cmd_get_settings (unsigned char status,
+                              unsigned char length,
+                              unsigned char *frame)
+{
+    unsigned int settings[] = {SAMPLING_FREQ,
+                               SAMPLE_SIZE,
+                               IM_COLS,
+                               MEM_PAGE_SIZE,
+                               MEM_SECTOR_SIZE,
+                               MEM_PAGE_START};
+    unsigned char *chr_settings = (unsigned char *) settings;
+
+    MacPacket packet;
+    Payload pld;
+
+    packet = radioRequestPacket(12);
+    if(packet == NULL) { return; }
+    macSetDestAddr(packet, DEST_ADDR);
+    macSetDestPan(packet, PAN_ID);
+
+    pld = macGetPayload(packet);
+    paySetData(pld, 12, chr_settings);
+    paySetType(pld, CMD_GET_SETTINGS);
+    paySetStatus(pld, 0);
+
+    while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
 }
 
 static void cmd_calibrate_gyro (unsigned char status,

@@ -127,6 +127,9 @@ def main():
     #wrl.setSrcPan(p.src_pan)
     #wrl.setSrcAddr(p.src_addr)
 
+    print('I: Getting capture settings...')
+    wrl.send(p.dest_addr, 0, p.cmd_get_settings, ' ')
+
     if p.do_run_robot:
 
         print('I: Running gyro calibration...')
@@ -219,6 +222,8 @@ def received(packet):
         else:
             print('W: Extra packet received! Appending to data dump.')
             d.dump.append([pkt_status, pkt_type, pkt_data])
+    elif ( pkt_type == p.cmd_get_settings ):
+        print(struct.unpack('<6H', pkt_data))
     else:
         print('E: Invalid packet received! Appending to data dump.')
         d.dump.append([pkt_status, pkt_type, pkt_data])
