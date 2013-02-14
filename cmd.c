@@ -305,14 +305,17 @@ static void cmd_read_memory (unsigned char status,
         {
             radioProcess(); // TODO (fgb) : Is this needed?
             packet = radioRequestPacket(pld_size);
-            if(packet == NULL) { continue; }
+            if(packet == NULL) { continue; } // TODO (fgb) : This isn't safe!
             macSetDestPan(packet, PAN_ID);
             macSetDestAddr(packet, DEST_ADDR);
+
             pld = macGetPayload(packet);
             dfmemRead(page, mem_byte, pld_size, payGetData(pld));
             paySetStatus(pld, count++);
             paySetType(pld, CMD_READ_MEMORY);
-            while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
+
+            while ( !radioEnqueueTxPacket(packet) ) radioProcess();
+
             mem_byte += pld_size;
         } while ( mem_byte <= (MEM_PAGE_SIZE - pld_size) );
 
@@ -341,20 +344,7 @@ static void cmd_get_settings (unsigned char status,
                                MEM_PAGE_START};
     unsigned char *chr_settings = (unsigned char *) settings;
 
-    MacPacket packet;
-    Payload pld;
-
-    packet = radioRequestPacket(12);
-    if(packet == NULL) { return; }
-    macSetDestAddr(packet, DEST_ADDR);
-    macSetDestPan(packet, PAN_ID);
-
-    pld = macGetPayload(packet);
-    paySetData(pld, 12, chr_settings);
-    paySetType(pld, CMD_GET_SETTINGS);
-    paySetStatus(pld, 0);
-
-    while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
+    radioSendData(DEST_ADDR, 0, CMD_GET_SETTINGS, 12, chr_settings, 0);
 }
 
 static void cmd_calibrate_gyro (unsigned char status,
@@ -374,18 +364,6 @@ static void cmd_get_gyro_calibration (unsigned char status,
                                       unsigned char length,
                                       unsigned char *frame)
 {
-    MacPacket packet;
-    Payload pld;
-
-    packet = radioRequestPacket(12);
-    if(packet == NULL) { return; }
-    macSetDestAddr(packet, DEST_ADDR);
-    macSetDestPan(packet, PAN_ID);
-
-    pld = macGetPayload(packet);
-    paySetData(pld, 12, gyroGetCalibParam());
-    paySetType(pld, CMD_GET_GYRO_CALIBRATION);
-    paySetStatus(pld, 0);
-
-    while(!radioEnqueueTxPacket(packet)) { radioProcess(); }
+    radioSendData(DEST_ADDR, 0, CMD_GET_GYRO_CALIBRATION,
+                                        12, gyroGetCalibParam(), 0);
 }

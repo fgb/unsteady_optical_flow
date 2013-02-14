@@ -76,7 +76,6 @@ int main(void) {
     SwitchClocks();
     sclockSetup();
 
-    spicSetupChannel1();
     ppoolInit();
     radioInit(TXPQ_MAX_SIZE, RXPQ_MAX_SIZE);
     radioSetChannel(MY_CHAN);
