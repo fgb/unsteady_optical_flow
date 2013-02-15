@@ -70,7 +70,7 @@ int main(void) {
     SetupClock();
     SetupPorts();
     batSetup();
-    cmd_setup();
+    cmdSetup();
     mcSetup();
     SetupADC();
     SwitchClocks();
@@ -99,7 +99,7 @@ int main(void) {
     /* Program */
     while(1)
     {
-        cmd_handle_radio_rx_buffer();
+        cmdHandleRadioRxBuffer();
         radioProcess();
     }
 }
