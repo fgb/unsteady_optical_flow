@@ -295,7 +295,6 @@ static void cmd_read_memory (unsigned char status,
     MacPacket packet;
     Payload pld;
 
-    // Send back memory contents
     LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 0;
 
     for ( page = page_start; page < page_end; ++page )
@@ -303,9 +302,9 @@ static void cmd_read_memory (unsigned char status,
         mem_byte = 0;
         do
         {
-            radioProcess(); // TODO (fgb) : Is this needed?
+            radioProcess();
             packet = radioRequestPacket(pld_size);
-            if(packet == NULL) { continue; } // TODO (fgb) : This isn't safe!
+            if(packet == NULL) continue;
             macSetDestPan(packet, PAN_ID);
             macSetDestAddr(packet, DEST_ADDR);
 
@@ -317,12 +316,10 @@ static void cmd_read_memory (unsigned char status,
             while ( !radioEnqueueTxPacket(packet) ) radioProcess();
 
             mem_byte += pld_size;
+
         } while ( mem_byte <= (MEM_PAGE_SIZE - pld_size) );
 
-        if ( (page >> 7) & 0x1 )
-        {
-            LED_GREEN = ~LED_GREEN; LED_ORANGE = ~LED_ORANGE;
-        }
+        if ( (page >> 7) & 0x1 ) LED_GREEN = ~LED_GREEN;
 
         delay_ms(20);
     }
@@ -344,7 +341,8 @@ static void cmd_get_settings (unsigned char status,
                                MEM_PAGE_START};
     unsigned char *chr_settings = (unsigned char *) settings;
 
-    radioSendData(DEST_ADDR, 0, CMD_GET_SETTINGS, 12, chr_settings, 0);
+    radioSendData(DEST_ADDR, 0, CMD_GET_SETTINGS,
+                    12, chr_settings, RADIO_DATA_SAFE);
 }
 
 static void cmd_calibrate_gyro (unsigned char status,
@@ -365,5 +363,5 @@ static void cmd_get_gyro_calibration (unsigned char status,
                                       unsigned char *frame)
 {
     radioSendData(DEST_ADDR, 0, CMD_GET_GYRO_CALIBRATION,
-                                        12, gyroGetCalibParam(), 0);
+                    12, gyroGetCalibParam(), RADIO_DATA_SAFE);
 }
