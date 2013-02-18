@@ -43,7 +43,6 @@
 #include "cmd.h"
 #include "motor_ctrl.h"
 #include "led.h"
-#include "utils.h"
 #include "sclock.h"
 
 #include "payload.h"
@@ -318,7 +317,6 @@ static void cmdReadMemory (unsigned char status,
 
         if ( (page >> 7) & 0x1 ) LED_GREEN = ~LED_GREEN;
 
-        delay_ms(20);
     }
 
     LED_GREEN = 1; LED_RED = 1; LED_ORANGE = 1;
