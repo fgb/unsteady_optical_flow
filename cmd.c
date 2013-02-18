@@ -71,7 +71,7 @@
 /* Capture Parameters */
 #define SAMPLING_FREQ   1000 // [Hz]
 #define SAMPLE_SIZE     176  // [bytes]
-#define IM_COLS         152
+#define ROW_SIZE        152  // [bytes]
 #define MEM_PAGE_SIZE   528  // [bytes]
 #define MEM_SECTOR_SIZE 128  // [pages]
 #define MEM_PAGE_START  128
@@ -95,7 +95,7 @@ union {
         unsigned long row_ts;               // (4)
         unsigned char row_num;              // (1)   physical row number
         unsigned char row_valid;            // (1)   was row captured?
-        unsigned char row[IM_COLS];         // (152) camera image row
+        unsigned char row[ROW_SIZE];        // (152) camera image row
     };
     unsigned char contents[SAMPLE_SIZE];    // (176) total
 } sample;
@@ -166,8 +166,6 @@ void cmdHandleRadioRxBuffer (void)
 
         radioReturnPacket(packet);
     }
-
-    return;
 }
 
 
@@ -179,13 +177,13 @@ static void cmdSetMotorSpeed (unsigned char status,
                               unsigned char length,
                               unsigned char *frame)
 {
-    unsigned char chr_test[4];
-    float *duty_cycle = (float*)chr_test;
+    unsigned char dc_chr[4];
+    float *duty_cycle = (float*)dc_chr;
 
-    chr_test[0] = frame[0];
-    chr_test[1] = frame[1];
-    chr_test[2] = frame[2];
-    chr_test[3] = frame[3];
+    dc_chr[0] = frame[0];
+    dc_chr[1] = frame[1];
+    dc_chr[2] = frame[2];
+    dc_chr[3] = frame[3];
 
     mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
 }
@@ -204,7 +202,8 @@ static void cmdEraseMemory (unsigned char status,
 
     do
     {
-        dfmemEraseSector(mem_page); while(!dfmemIsReady());
+        dfmemEraseSector(mem_page);
+        while ( !dfmemIsReady() );
         mem_page += MEM_SECTOR_SIZE;
     } while (mem_page < mem_page_max);
 
@@ -221,10 +220,8 @@ static void cmdRecordSensorDump (unsigned char status,
                   mem_page         = MEM_PAGE_START;
     unsigned long next_sample_time = sclockGetTime();
     static unsigned char buffer    = 1;
-
     CamRow row_buff;
 
-    // Dump sensor data to memory
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 1;
 
     camStart(); // Enable camera capture interrupt
@@ -240,13 +237,13 @@ static void cmdRecordSensorDump (unsigned char status,
                 sample.row_ts    = row_buff->timestamp;
                 sample.row_num   = (unsigned int) row_buff->row_num;
                 sample.row_valid = 1;
-                memcpy(sample.row, row_buff->pixels, IM_COLS);
+                memcpy ( sample.row, row_buff->pixels, ROW_SIZE );
                 cambuffReturnRow(row_buff);
             } else {
                 sample.row_ts    = 0;
                 sample.row_num   = 0xFF;
                 sample.row_valid = 0;
-                memset(sample.row, 0, IM_COLS);
+                memset(sample.row, 0, ROW_SIZE);
             }
 
             sample.gyro_ts = sclockGetTime();               // Gyroscope
@@ -258,13 +255,13 @@ static void cmdRecordSensorDump (unsigned char status,
             sample.id      = count;                         // Sample #
 
             // Send sample to memory buffer
-            dfmemWriteBuffer(sample.contents, SAMPLE_SIZE, mem_byte, buffer);
+            dfmemWriteBuffer ( sample.contents, SAMPLE_SIZE, mem_byte, buffer );
             mem_byte += SAMPLE_SIZE;
 
             // If buffer is about to overflow, write it to memory
             if ( mem_byte > (MEM_PAGE_SIZE - SAMPLE_SIZE) )
             {
-                dfmemWriteBuffer2MemoryNoErase(mem_page++, buffer);
+                dfmemWriteBuffer2MemoryNoErase ( mem_page++, buffer );
                 buffer ^= 0x1;  // toggle between buffer 0 and 1
                 mem_byte = 0;
             }
@@ -335,7 +332,7 @@ static void cmdGetSettings (unsigned char status,
 {
     unsigned int settings[] = {SAMPLING_FREQ,
                                SAMPLE_SIZE,
-                               IM_COLS,
+                               ROW_SIZE,
                                MEM_PAGE_SIZE,
                                MEM_SECTOR_SIZE,
                                MEM_PAGE_START};
