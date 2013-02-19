@@ -173,7 +173,7 @@ def main():
     print('I: Requesting memory contents...')
     # TODO (fgb) : Get rid of statically allocated memory locations
     wrl.send(p.dest_addr, 0, p.cmd_read_memory, \
-            struct.pack('<3H', 0x80, 0x80 + int(np.ceil(d.samples/3.)), 44))
+                                            struct.pack('<2H', d.samples, 44))
     time.sleep(0.5)
 
     raw_input('Q: When data has been received, please [PRESS ANY KEY]')

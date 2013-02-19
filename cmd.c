@@ -294,9 +294,8 @@ static void cmdReadMemory (unsigned char status,
                            unsigned char length,
                            unsigned char *frame)
 {
-    unsigned int page_start = frame[0] + (frame[1] << 8),
-                 page_end   = frame[2] + (frame[3] << 8),
-                 pld_size   = frame[4] + (frame[5] << 8),
+    unsigned int samples  = frame[0] + (frame[1] << 8),
+                 pld_size = frame[2] + (frame[3] << 8),
                  page, mem_byte;
     unsigned char count = 0;
 
@@ -305,7 +304,8 @@ static void cmdReadMemory (unsigned char status,
 
     LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 0;
 
-    for ( page = page_start; page < page_end; ++page )
+    for ( page = settings.mem_page_start;
+            page < (settings.mem_page_start + samples/3); ++page )
     {
         mem_byte = 0;
         do
