@@ -43,19 +43,15 @@
 #include "init_default.h"
 #include "init.h"       // only used for SetupADC() for bemf
 #include "battery.h"
-#include "interrupts.h" // only used for address trap
 #include "cmd.h"
 #include "motor_ctrl.h"
 #include "led.h"
 #include "sclock.h"
 
-#include "spi_controller.h"
-#include "ppool.h"
-#include "radio_settings.h"
 #include "radio.h"
+#include "radio_settings.h"
 
 #include "dfmem.h"
-#include "ovcam.h"
 #include "cam.h"
 #include "cambuff.h"
 #include "gyro.h"
@@ -76,14 +72,12 @@ int main(void) {
     SwitchClocks();
     sclockSetup();
 
-    ppoolInit();
     radioInit(TXPQ_MAX_SIZE, RXPQ_MAX_SIZE);
     radioSetChannel(MY_CHAN);
     radioSetSrcPanID(PAN_ID);
     radioSetSrcAddr(SRC_ADDR);
 
     dfmemSetup();
-    ovcamSetup();
     camSetup();
     cambuffSetup();
     gyroSetup();
@@ -97,7 +91,7 @@ int main(void) {
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 
     /* Program */
-    while(1)
+    while (1)
     {
         cmdHandleRadioRxBuffer();
         radioProcess();

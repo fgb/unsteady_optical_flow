@@ -46,8 +46,8 @@
 #include "sclock.h"
 
 #include "payload.h"
-#include "radio_settings.h"
 #include "radio.h"
+#include "radio_settings.h"
 
 #include "dfmem.h"
 #include "cam.h"
