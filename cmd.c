@@ -202,7 +202,6 @@ static void cmdEraseMemory (unsigned char status,
     do
     {
         dfmemEraseSector(mem_page);
-        while ( !dfmemIsReady() );
         mem_page += MEM_SECTOR_SIZE;
     } while (mem_page < mem_page_max);
 
