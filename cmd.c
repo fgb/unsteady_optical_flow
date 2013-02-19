@@ -58,27 +58,27 @@
 
 
 /* Commands */
-#define CMD_SET_MOTOR_SPEED      0
-#define CMD_ERASE_MEMORY         3
-#define CMD_RECORD_SENSOR_DUMP   4
-#define CMD_READ_MEMORY          5
-#define CMD_GET_SETTINGS         6
-#define CMD_CALIBRATE_GYRO       0x0d
-#define CMD_GET_GYRO_CALIBRATION 0x0e
-#define MAX_NUM_COMMANDS         0xFF
+#define CMD_SET_MOTOR_SPEED       0
+#define CMD_ERASE_MEMORY          3
+#define CMD_RECORD_SENSOR_DUMP    4
+#define CMD_READ_MEMORY           5
+#define CMD_GET_SETTINGS          6
+#define CMD_SET_SAMPLING_PERIOD   7
+#define CMD_SET_MEMORY_PAGE_START 8
+#define CMD_CALIBRATE_GYRO        0x0d
+#define CMD_GET_GYRO_CALIBRATION  0x0e
+#define MAX_NUM_COMMANDS          0xFF
 
 /* Capture Parameters */
-#define SAMPLING_FREQ   1000 // [Hz]
 #define SAMPLE_SIZE     176  // [bytes]
 #define ROW_SIZE        152  // [bytes]
 #define MEM_PAGE_SIZE   528  // [bytes]
 #define MEM_SECTOR_SIZE 128  // [pages]
-#define MEM_PAGE_START  128
 
 
 /*-----------------------------------------------------------------------------
  *          Private declarations
------------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 
 void (*cmd_func[MAX_NUM_COMMANDS])(unsigned char,
                                    unsigned char,
@@ -98,6 +98,11 @@ union {
     };
     unsigned char contents[SAMPLE_SIZE];    // (176) total
 } sample;
+
+struct {
+    unsigned int sampling_period;
+    unsigned int mem_page_start;
+} settings;
 
 
 /*----------------------------------------------------------------------------
@@ -119,6 +124,12 @@ static void         cmdReadMemory (unsigned char status,
 static void        cmdGetSettings (unsigned char status,
                                    unsigned char length,
                                    unsigned char *frame);
+static void  cmdSetSamplingPeriod (unsigned char status,
+                                   unsigned char length,
+                                   unsigned char *frame);
+static void cmdSetMemoryPageStart (unsigned char status,
+                                   unsigned char length,
+                                   unsigned char *frame);
 static void      cmdCalibrateGyro (unsigned char status,
                                    unsigned char length,
                                    unsigned char *frame);
@@ -129,7 +140,7 @@ static void cmdGetGyroCalibration (unsigned char status,
 
 /*-----------------------------------------------------------------------------
  *          Public functions
------------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 
 void cmdSetup (void)
 {
@@ -137,13 +148,15 @@ void cmdSetup (void)
 
     for ( i = 0; i < MAX_NUM_COMMANDS; ++i ) cmd_func[i] = NULL;
 
-    cmd_func[CMD_SET_MOTOR_SPEED]      = &cmdSetMotorSpeed;
-    cmd_func[CMD_ERASE_MEMORY]         = &cmdEraseMemory;
-    cmd_func[CMD_RECORD_SENSOR_DUMP]   = &cmdRecordSensorDump;
-    cmd_func[CMD_READ_MEMORY]          = &cmdReadMemory;
-    cmd_func[CMD_GET_SETTINGS]         = &cmdGetSettings;
-    cmd_func[CMD_CALIBRATE_GYRO]       = &cmdCalibrateGyro;
-    cmd_func[CMD_GET_GYRO_CALIBRATION] = &cmdGetGyroCalibration;
+    cmd_func[CMD_SET_MOTOR_SPEED]       = &cmdSetMotorSpeed;
+    cmd_func[CMD_ERASE_MEMORY]          = &cmdEraseMemory;
+    cmd_func[CMD_RECORD_SENSOR_DUMP]    = &cmdRecordSensorDump;
+    cmd_func[CMD_READ_MEMORY]           = &cmdReadMemory;
+    cmd_func[CMD_GET_SETTINGS]          = &cmdGetSettings;
+    cmd_func[CMD_SET_SAMPLING_PERIOD]   = &cmdSetSamplingPeriod;
+    cmd_func[CMD_SET_MEMORY_PAGE_START] = &cmdSetMemoryPageStart;
+    cmd_func[CMD_CALIBRATE_GYRO]        = &cmdCalibrateGyro;
+    cmd_func[CMD_GET_GYRO_CALIBRATION]  = &cmdGetGyroCalibration;
 }
 
 void cmdHandleRadioRxBuffer (void)
@@ -193,7 +206,7 @@ static void cmdEraseMemory (unsigned char status,
 {
     // TODO (fgb) : Adapt to any number of samples, not only mult of 3
     unsigned int  samples      = frame[0] + (frame[1] << 8),
-                  mem_page     = MEM_PAGE_START,
+                  mem_page     = settings.mem_page_start,
                   mem_page_max = mem_page + samples/3 + MEM_SECTOR_SIZE;
 
     // Erase as many memory sectors as needed
@@ -215,7 +228,7 @@ static void cmdRecordSensorDump (unsigned char status,
     unsigned int  samples          = frame[0] + (frame[1] << 8),
                   count            = 0,
                   mem_byte         = 0,
-                  mem_page         = MEM_PAGE_START;
+                  mem_page         = settings.mem_page_start;
     unsigned long next_sample_time = sclockGetTime();
     static unsigned char buffer    = 1;
     CamRow row_buff;
@@ -267,7 +280,7 @@ static void cmdRecordSensorDump (unsigned char status,
             // Stop motor while still sampling, to capture final glide/crash
             if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
-            next_sample_time += SAMPLING_FREQ;
+            next_sample_time += settings.sampling_period;
             count++;
         }
     } while (count < samples);
@@ -327,16 +340,30 @@ static void cmdGetSettings (unsigned char status,
                             unsigned char length,
                             unsigned char *frame)
 {
-    unsigned int settings[] = {SAMPLING_FREQ,
-                               SAMPLE_SIZE,
-                               ROW_SIZE,
-                               MEM_PAGE_SIZE,
-                               MEM_SECTOR_SIZE,
-                               MEM_PAGE_START};
-    unsigned char *chr_settings = (unsigned char *) settings;
+    unsigned int settings_data[] = {settings.sampling_period,
+                                    SAMPLE_SIZE,
+                                    ROW_SIZE,
+                                    MEM_PAGE_SIZE,
+                                    MEM_SECTOR_SIZE,
+                                    settings.mem_page_start};
+    unsigned char *chr_settings_data = (unsigned char *) settings_data;
 
     radioSendData(DEST_ADDR, 0, CMD_GET_SETTINGS,
-                    12, chr_settings, RADIO_DATA_SAFE);
+                    sizeof(settings_data), chr_settings_data, RADIO_DATA_SAFE);
+}
+
+static void  cmdSetSamplingPeriod (unsigned char status,
+                                   unsigned char length,
+                                   unsigned char *frame)
+{
+    settings.sampling_period = frame[0] + (frame[1] << 8);
+}
+
+static void  cmdSetMemoryPageStart (unsigned char status,
+                                    unsigned char length,
+                                    unsigned char *frame)
+{
+    settings.mem_page_start = frame[0] + (frame[1] << 8);
 }
 
 static void cmdCalibrateGyro (unsigned char status,

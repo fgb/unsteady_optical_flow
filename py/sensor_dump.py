@@ -127,6 +127,13 @@ def main():
     #wrl.setSrcPan(p.src_pan)
     #wrl.setSrcAddr(p.src_addr)
 
+    print('I: Setting sampling period to ' + str(p.ts) + ' [us]')
+    wrl.send(p.dest_addr, 0, p.cmd_set_sampling_period, struct.pack('<H', p.ts))
+
+    print('I: Setting starting memory page to ' + str(p.mem_page_start))
+    wrl.send(p.dest_addr, 0, p.cmd_set_memory_page_start,
+                                        struct.pack('<H', p.mem_page_start))
+
     print('I: Getting capture settings...')
     wrl.send(p.dest_addr, 0, p.cmd_get_settings, ' ')
 
@@ -141,7 +148,7 @@ def main():
         # TODO (fgb) : Request n seconds instead of samples
         wrl.send(p.dest_addr, 0, p.cmd_erase_memory, \
                                                 struct.pack('<H', d.samples))
-        time.sleep(6)
+        time.sleep(p.t + 1)
 
         raw_input('Q: To start the run, please [PRESS ANY KEY]')
         do_capture_vicon = True
