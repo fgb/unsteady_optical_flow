@@ -185,6 +185,12 @@ def main():
     shelf.close()
     print('I: Saved session to ' + os.path.basename(datafile_shelf))
 
+    latest_symlink = root + 'latest_session.shelf'
+    if os.path.exists(latest_symlink):
+        os.remove(latest_symlink)
+    os.symlink(datafile_shelf, latest_symlink)
+    print('I: Linked session to ' + os.path.basename(latest_symlink))
+
 def received(packet):
     global p, d
 
