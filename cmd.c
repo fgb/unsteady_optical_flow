@@ -70,7 +70,6 @@
 #define MAX_NUM_COMMANDS          0xFF
 
 /* Capture Parameters */
-#define SAMPLE_SIZE     176  // [bytes]
 #define ROW_SIZE        152  // [bytes]
 #define MEM_PAGE_SIZE   528  // [bytes]
 #define MEM_SECTOR_SIZE 128  // [pages]
@@ -96,7 +95,7 @@ union {
         unsigned char row_valid;            // (1)   was row captured?
         unsigned char row[ROW_SIZE];        // (152) camera image row
     };
-    unsigned char contents[SAMPLE_SIZE];    // (176) total
+    unsigned char contents[176];
 } sample;
 
 struct {
@@ -266,11 +265,11 @@ static void cmdRecordSensorDump (unsigned char status,
             sample.id      = count;                         // Sample #
 
             // Send sample to memory buffer
-            dfmemWriteBuffer ( sample.contents, SAMPLE_SIZE, mem_byte, buffer );
-            mem_byte += SAMPLE_SIZE;
+            dfmemWriteBuffer ( sample.contents, sizeof(sample), mem_byte, buffer );
+            mem_byte += sizeof(sample);
 
             // If buffer is about to overflow, write it to memory
-            if ( mem_byte > (MEM_PAGE_SIZE - SAMPLE_SIZE) )
+            if ( mem_byte > (MEM_PAGE_SIZE - sizeof(sample)) )
             {
                 dfmemWriteBuffer2MemoryNoErase ( mem_page++, buffer );
                 buffer ^= 0x1;  // toggle between buffer 0 and 1
@@ -341,7 +340,7 @@ static void cmdGetSettings (unsigned char status,
                             unsigned char *frame)
 {
     unsigned int settings_data[] = {settings.sampling_period,
-                                    SAMPLE_SIZE,
+                                    sizeof(sample),
                                     ROW_SIZE,
                                     MEM_PAGE_SIZE,
                                     MEM_SECTOR_SIZE,
