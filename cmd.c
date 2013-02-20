@@ -158,6 +158,12 @@ void cmdSetup (void)
     cmd_func[CMD_GET_GYRO_CALIBRATION]  = &cmdGetGyroCalibration;
 }
 
+void cmdResetSettings (void)
+{
+    settings.sampling_period = 1000;
+    settings.mem_page_start  = 128;
+}
+
 void cmdHandleRadioRxBuffer (void)
 {
     MacPacket packet;

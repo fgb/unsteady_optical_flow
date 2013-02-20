@@ -41,6 +41,8 @@
 
 void cmdSetup (void);
 
+void cmdResetSettings (void);
+
 void cmdHandleRadioRxBuffer (void);
 
 

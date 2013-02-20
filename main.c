@@ -82,6 +82,8 @@ int main(void) {
     cambuffSetup();
     gyroSetup();
 
+    cmdResetSettings();
+
     for (i = 0; i < 6; i++)
     {
         LED_GREEN  = ~LED_GREEN;  delay_ms(50);
