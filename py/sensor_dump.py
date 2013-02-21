@@ -64,9 +64,7 @@ def main():
     configfile = parser.parse_args().filename[0]
 
     # Load parameters from configuration file
-    # TODO (fgb) : Do we really need params and p here, or would p just suffice?
-    params = utils.load_config(configfile)
-    p      = utils.Bunch(params)
+    p = utils.Bunch(utils.load_config(configfile))
 
     # Construct filename
     root     = os.path.expanduser(p.root)
@@ -183,6 +181,9 @@ def main():
     # Shelve session information
     datafile_shelf = datafile + '_session.shelf'
     shelf = shelve.open(datafile_shelf)
+    shelf['p']                = globals()['p']
+    shelf['d']                = globals()['d']
+    shelf['do_capture_vicon'] = globals()['do_capture_vicon']
     for key in dir():
         try:
             dump = pickle.dumps(locals()[key])
