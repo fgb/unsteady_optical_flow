@@ -57,9 +57,8 @@
 #include "gyro.h"
 
 
-int main(void) {
-
-    /* Declarations */
+int main (void)
+{
     unsigned int i;
 
     /* Initialization */

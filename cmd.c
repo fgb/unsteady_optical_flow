@@ -58,6 +58,9 @@
 
 
 /* Commands */
+#define CMD_MAX     0xFF
+
+// TODO (fgb) : Should these be part of py-generated h file?
 #define CMD_SET_MOTOR_SPEED       0
 #define CMD_ERASE_MEMORY          3
 #define CMD_RECORD_SENSOR_DUMP    4
@@ -67,7 +70,6 @@
 #define CMD_SET_MEMORY_PAGE_START 8
 #define CMD_CALIBRATE_GYRO        0x0d
 #define CMD_GET_GYRO_CALIBRATION  0x0e
-#define MAX_NUM_COMMANDS          0xFF
 
 /* Capture Parameters */
 #define ROW_SIZE        152  // [bytes]
@@ -77,11 +79,9 @@
 
 /*-----------------------------------------------------------------------------
  *          Private declarations
- ----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
-void (*cmd_func[MAX_NUM_COMMANDS])(unsigned char,
-                                   unsigned char,
-                                   unsigned char*);
+void (*cmd_func[CMD_MAX]) (unsigned char, unsigned char, unsigned char*);
 
 union {
     struct {
@@ -98,15 +98,18 @@ union {
     unsigned char contents[176];
 } sample;
 
-struct {
-    unsigned int sampling_period;
-    unsigned int mem_page_start;
+union {
+    struct {
+        unsigned int sampling_period;
+        unsigned int mem_page_start;
+    };
+    unsigned char contents[2 * sizeof(unsigned int)];
 } settings;
 
 
 /*----------------------------------------------------------------------------
  *          Declaration of private functions
- ---------------------------------------------------------------------------*/
+ *--------------------------------------------------------------------------*/
 
 static void      cmdSetMotorSpeed (unsigned char status,
                                    unsigned char length,
@@ -139,13 +142,13 @@ static void cmdGetGyroCalibration (unsigned char status,
 
 /*-----------------------------------------------------------------------------
  *          Public functions
- ----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 void cmdSetup (void)
 {
     unsigned int i;
 
-    for ( i = 0; i < MAX_NUM_COMMANDS; ++i ) cmd_func[i] = NULL;
+    for ( i = 0; i < CMD_MAX; ++i ) cmd_func[i] = NULL;
 
     cmd_func[CMD_SET_MOTOR_SPEED]       = &cmdSetMotorSpeed;
     cmd_func[CMD_ERASE_MEMORY]          = &cmdEraseMemory;
@@ -176,7 +179,7 @@ void cmdHandleRadioRxBuffer (void)
         status  = payGetStatus(pld);
         command = payGetType(pld);
 
-        if ( command < MAX_NUM_COMMANDS )
+        if ( command < CMD_MAX )
         {
             cmd_func[command](status, payGetDataLength(pld), payGetData(pld));
         }
@@ -188,12 +191,13 @@ void cmdHandleRadioRxBuffer (void)
 
 /*-----------------------------------------------------------------------------
  *          Private functions
------------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 static void cmdSetMotorSpeed (unsigned char status,
                               unsigned char length,
                               unsigned char *frame)
 {
+    // TODO (fgb) : Simplify extraction of frame
     unsigned char dc_chr[4];
     float *duty_cycle = (float*)dc_chr;
 
@@ -214,7 +218,6 @@ static void cmdEraseMemory (unsigned char status,
                   mem_page     = settings.mem_page_start,
                   mem_page_max = mem_page + samples/3 + MEM_SECTOR_SIZE;
 
-    // Erase as many memory sectors as needed
     LED_GREEN = 0; LED_RED = 1; LED_ORANGE = 0;
 
     do
@@ -268,17 +271,17 @@ static void cmdRecordSensorDump (unsigned char status,
             sample.bemf_ts = sclockGetTime();               // Back-EMF
             sample.bemf    = ADC1BUF0;
 
-            sample.id      = count;                         // Sample #
+            sample.id      = count++;                       // Sample #
 
             // Send sample to memory buffer
-            dfmemWriteBuffer ( sample.contents, sizeof(sample), mem_byte, buffer );
+            dfmemWriteBuffer(sample.contents, sizeof(sample), mem_byte, buffer);
             mem_byte += sizeof(sample);
 
             // If buffer is about to overflow, write it to memory
             if ( mem_byte > (MEM_PAGE_SIZE - sizeof(sample)) )
             {
                 dfmemWriteBuffer2MemoryNoErase ( mem_page++, buffer );
-                buffer ^= 0x1;  // toggle between buffer 0 and 1
+                buffer  ^= 0x1;  // toggle between buffer 0 and 1
                 mem_byte = 0;
             }
 
@@ -286,7 +289,6 @@ static void cmdRecordSensorDump (unsigned char status,
             if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
 
             next_sample_time += settings.sampling_period;
-            count++;
         }
     } while (count < samples);
 
@@ -345,16 +347,8 @@ static void cmdGetSettings (unsigned char status,
                             unsigned char length,
                             unsigned char *frame)
 {
-    unsigned int settings_data[] = {settings.sampling_period,
-                                    sizeof(sample),
-                                    ROW_SIZE,
-                                    MEM_PAGE_SIZE,
-                                    MEM_SECTOR_SIZE,
-                                    settings.mem_page_start};
-    unsigned char *chr_settings_data = (unsigned char *) settings_data;
-
     radioSendData(DEST_ADDR, 0, CMD_GET_SETTINGS,
-                    sizeof(settings_data), chr_settings_data, RADIO_DATA_SAFE);
+                    sizeof(settings), settings.contents, RADIO_DATA_SAFE);
 }
 
 static void  cmdSetSamplingPeriod (unsigned char status,

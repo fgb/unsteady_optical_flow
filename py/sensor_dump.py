@@ -95,7 +95,9 @@ def main():
     data['packet_cnt'] = 0
     data['dump']       = []
 
-    # TODO (fgb) : We should request capture settings from robot?
+    data['ts']             = 0
+    data['mem_page_start'] = 0
+
     data['id']         = np.zeros((data['samples'],   1), dtype=np.uint16)
     data['bemf_ts']    = np.zeros((data['samples'],   1), dtype=np.uint32)
     data['bemf']       = np.zeros((data['samples'],   1), dtype=np.uint16)
@@ -124,13 +126,6 @@ def main():
     wrl = radio.radio(p.port, p.baud, received)
     #wrl.setSrcPan(p.src_pan)
     #wrl.setSrcAddr(p.src_addr)
-
-    print('I: Setting sampling period to ' + str(p.ts) + ' [us]')
-    wrl.send(p.dest_addr, 0, p.cmd_set_sampling_period, struct.pack('<H', p.ts))
-
-    print('I: Setting starting memory page to ' + str(p.mem_page_start))
-    wrl.send(p.dest_addr, 0, p.cmd_set_memory_page_start,
-                                        struct.pack('<H', p.mem_page_start))
 
     print('I: Getting capture settings...')
     wrl.send(p.dest_addr, 0, p.cmd_get_settings, ' ')
@@ -169,7 +164,6 @@ def main():
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
     do_capture_vicon = False
     print('I: Requesting memory contents...')
-    # TODO (fgb) : Get rid of statically allocated memory locations
     wrl.send(p.dest_addr, 0, p.cmd_read_memory, \
                                             struct.pack('<2H', d.samples, 44))
     time.sleep(0.5)
@@ -237,7 +231,7 @@ def received(packet):
             print('W: Extra packet received! Appending to data dump.')
             d.dump.append([pkt_status, pkt_type, pkt_data])
     elif ( pkt_type == p.cmd_get_settings ):
-        print(struct.unpack('<6H', pkt_data))
+        (d.ts, d.mem_page_start) = struct.unpack('<2H', pkt_data)
     else:
         print('E: Invalid packet received! Appending to data dump.')
         d.dump.append([pkt_status, pkt_type, pkt_data])
