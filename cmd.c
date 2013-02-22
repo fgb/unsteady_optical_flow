@@ -208,7 +208,6 @@ static void cmdEraseMemory (unsigned char status,
                             unsigned char length,
                             unsigned char *frame)
 {
-    // TODO (fgb) : Adapt to any number of samples, not only mult of 3
     unsigned int  samples      = frame[0] + (frame[1] << 8),
                   mem_page     = settings.mem_page_start,
                   mem_page_max = mem_page + samples/3 + MEM_SECTOR_SIZE;

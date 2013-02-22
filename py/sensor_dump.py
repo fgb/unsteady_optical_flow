@@ -46,8 +46,8 @@
 #  - This file is derived from xboptflow.py, by Stanley S. Baek.
 #
 
-import sys, os, time, struct, traceback, logging as lg, argparse, shelve, pickle
-import numpy as np
+import sys, os, time, traceback, logging as lg, argparse, shelve, pickle
+import struct as st, numpy as np
 from imageproc_py import radio, payload, utils
 
 #import roslib; roslib.load_manifest('vicon_bridge')
@@ -55,7 +55,7 @@ from imageproc_py import radio, payload, utils
 #from geometry_msgs.msg import TransformStamped
 
 def main():
-    global p, d, do_capture_vicon
+    global p, s, d, do_capture_vicon
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
@@ -87,33 +87,51 @@ def main():
     print('I: Experimental data will be saved to ' + root + \
         '\nI: Session will be logged to ' + os.path.basename(datafile_log))
 
+    # Establish communication link
+    wrl = radio.radio(p.port, p.baud, received)
+    #wrl.setSrcPan(p.src_pan)
+    #wrl.setSrcAddr(p.src_addr)
+
+    # Capture settings
+    settings = {}
+
+    settings['ts']             = 0
+    settings['mem_page_start'] = 0
+    settings['samples']        = 0
+    settings['samples_v']      = int(p.t_v * p.fs_v)
+
+    s = utils.Bunch(settings)
+
+    print('I: Getting capture settings...')
+    wrl.send(p.dest_addr, 0, p.cmd_get_settings)
+    time.sleep(1)
+
+    s.samples = int(p.t * p.t_factor / s.ts)
+
     # Data
     data = {}
 
-    data['samples']    = int(p.t * p.fs) # (max is 0xFFFF, multiple of 3)
-    data['sample_cnt'] = 0
     data['packet_cnt'] = 0
-    data['dump']       = []
+    data['sample_cnt'] = 0
 
-    data['ts']             = 0
-    data['mem_page_start'] = 0
+    data['id']         = np.zeros((s.samples,   1), dtype=np.uint16)
+    data['bemf_ts']    = np.zeros((s.samples,   1), dtype=np.uint32)
+    data['bemf']       = np.zeros((s.samples,   1), dtype=np.uint16)
+    data['gyro_ts']    = np.zeros((s.samples,   1), dtype=np.uint32)
+    data['gyro_calib'] = np.zeros((             3), dtype=np.float32)
+    data['gyro']       = np.zeros((s.samples,   3), dtype=np.int16)
+    data['row_ts']     = np.zeros((s.samples,   1), dtype=np.uint32)
+    data['row_num']    = np.zeros((s.samples,   1), dtype=np.uint8)
+    data['row_valid']  = np.zeros((s.samples,   1), dtype=np.uint8)
+    data['row']        = np.zeros((s.samples, 152), dtype=np.uint8)
 
-    data['id']         = np.zeros((data['samples'],   1), dtype=np.uint16)
-    data['bemf_ts']    = np.zeros((data['samples'],   1), dtype=np.uint32)
-    data['bemf']       = np.zeros((data['samples'],   1), dtype=np.uint16)
-    data['gyro_ts']    = np.zeros((data['samples'],   1), dtype=np.uint32)
-    data['gyro_calib'] = np.zeros((3),                    dtype=np.float32)
-    data['gyro']       = np.zeros((data['samples'],   3), dtype=np.int16)
-    data['row_ts']     = np.zeros((data['samples'],   1), dtype=np.uint32)
-    data['row_num']    = np.zeros((data['samples'],   1), dtype=np.uint8)
-    data['row_valid']  = np.zeros((data['samples'],   1), dtype=np.uint8)
-    data['row']        = np.zeros((data['samples'], 152), dtype=np.uint8)
-
-    data['samples_v']    = int(p.t_v * p.fs_v)
     data['sample_v_cnt'] = 0
-    data['ts_v']         = np.zeros((data['samples_v'], 2))
-    data['pos_v']        = np.zeros((data['samples_v'], 3))
-    data['qorn_v']       = np.zeros((data['samples_v'], 4))
+
+    data['ts_v']   = np.zeros((s.samples_v, 2))
+    data['pos_v']  = np.zeros((s.samples_v, 3))
+    data['qorn_v'] = np.zeros((s.samples_v, 4))
+
+    data['dump'] = []
 
     d = utils.Bunch(data)
 
@@ -122,51 +140,36 @@ def main():
     #rospy.Subscriber('/vicon/vamp/Body', TransformStamped, vicon_callback);
     #do_capture_vicon = False
 
-    # Establish communication link
-    wrl = radio.radio(p.port, p.baud, received)
-    #wrl.setSrcPan(p.src_pan)
-    #wrl.setSrcAddr(p.src_addr)
-
-    print('I: Getting capture settings...')
-    wrl.send(p.dest_addr, 0, p.cmd_get_settings, ' ')
-
-    if p.do_run_robot:
+    if p.dump_sensors:
 
         print('I: Running gyro calibration...')
         wrl.send(p.dest_addr, 0, p.cmd_calibrate_gyro)
         time.sleep(2)
 
         print('I: Erasing memory contents...')
-        # TODO (fgb) : Request n seconds instead of samples
-        wrl.send(p.dest_addr, 0, p.cmd_erase_memory, \
-                                                struct.pack('<H', d.samples))
+        wrl.send(p.dest_addr, 0, p.cmd_erase_memory, st.pack('<H', s.samples))
         time.sleep(p.t + 1)
 
         raw_input('Q: To start the run, please [PRESS ANY KEY]')
         do_capture_vicon = True
-        wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, \
-                                                struct.pack('<f', p.dcval))
         print('I: Setting motor to desired duty cycle...')
+        wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, st.pack('<f', p.dcval))
         time.sleep(2)
 
         print('I: Requesting a sensor dump into memory...')
-        # TODO (fgb) : Request n seconds instead of samples
         wrl.send(p.dest_addr, 0, p.cmd_record_sensor_dump, \
-                                                struct.pack('<H', d.samples))
+                                                    st.pack('<H', s.samples))
         time.sleep(p.t + 1)
 
         #raw_input('Q: To stop the run, please [PRESS ANY KEY]')
         #print('I: Stopping motor...') # automatically done halfway through dump
-        #wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, struct.pack('<f', 0))
+        #wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, st.pack('<f', 0))
         #time.sleep(0.5)
 
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
     do_capture_vicon = False
     print('I: Requesting memory contents...')
-    wrl.send(p.dest_addr, 0, p.cmd_read_memory, \
-                                            struct.pack('<2H', d.samples, 44))
-    time.sleep(0.5)
-
+    wrl.send(p.dest_addr, 0, p.cmd_read_memory, st.pack('<2H', s.samples, 44))
     raw_input('Q: When data has been received, please [PRESS ANY KEY]')
     print('I: ' + str(d.packet_cnt) + ' packets received, including ' + \
                                             str(d.sample_cnt) + ' samples.')
@@ -174,15 +177,18 @@ def main():
     # Shelve session information
     datafile_shelf = datafile + '_session.shelf'
     shelf = shelve.open(datafile_shelf)
-    shelf['p']                = globals()['p']
-    shelf['d']                = globals()['d']
-    shelf['do_capture_vicon'] = globals()['do_capture_vicon']
+    not_shelved = ''
     for key in dir():
         try:
             dump = pickle.dumps(locals()[key])
             shelf[key] = locals()[key]
         except:
-            print('W: ' + key + ' will not be saved!')
+            not_shelved += ' ' + key
+    if not_shelved != '':
+        print('W:' + not_shelved + ': not shelved!')
+    shelf['p'] = globals()['p']
+    shelf['s'] = globals()['s']
+    shelf['d'] = globals()['d']
     shelf.close()
     print('I: Saved session to ' + os.path.basename(datafile_shelf))
 
@@ -193,7 +199,7 @@ def main():
     print('I: Linked session to ' + os.path.basename(latest_symlink))
 
 def received(packet):
-    global p, d
+    global p, s, d
 
     pld        = payload.Payload(packet.get('rf_data'))
     pkt_status = pld.status
@@ -204,42 +210,44 @@ def received(packet):
         d.packet_cnt += 1
         cnt = d.sample_cnt
         pkt_index = pkt_status % 4
-        if cnt < d.samples:
+        if cnt < s.samples:
             if pkt_index == 0:
-                d.id[cnt]        = struct.unpack('<H',   pkt_data[:2])
-                d.bemf_ts[cnt]   = struct.unpack('<L',   pkt_data[2:6])
-                d.bemf[cnt]      = struct.unpack('<H',   pkt_data[6:8])
-                d.gyro_ts[cnt]   = struct.unpack('<L',   pkt_data[8:12])
-                d.gyro[cnt]      = struct.unpack('<3h',  pkt_data[12:18])
-                d.row_ts[cnt]    = struct.unpack('<L',   pkt_data[18:22])
-                d.row_num[cnt]   = struct.unpack('<B',   pkt_data[22:23])
-                d.row_valid[cnt] = struct.unpack('<B',   pkt_data[23:24])
-                d.row[cnt,:20]   = struct.unpack('<20B', pkt_data[24:])
+                d.id[cnt]        = st.unpack('<H',   pkt_data[:2])
+                d.bemf_ts[cnt]   = st.unpack('<L',   pkt_data[2:6])
+                d.bemf[cnt]      = st.unpack('<H',   pkt_data[6:8])
+                d.gyro_ts[cnt]   = st.unpack('<L',   pkt_data[8:12])
+                d.gyro[cnt]      = st.unpack('<3h',  pkt_data[12:18])
+                d.row_ts[cnt]    = st.unpack('<L',   pkt_data[18:22])
+                d.row_num[cnt]   = st.unpack('<B',   pkt_data[22:23])
+                d.row_valid[cnt] = st.unpack('<B',   pkt_data[23:24])
+                d.row[cnt,:20]   = st.unpack('<20B', pkt_data[24:])
             elif pkt_index == 1:
-                d.row[cnt,20:64] = struct.unpack('<44B', pkt_data)
+                d.row[cnt,20:64] = st.unpack('<44B', pkt_data)
             elif pkt_index == 2:
-                d.row[cnt,64:108]= struct.unpack('<44B', pkt_data)
+                d.row[cnt,64:108]= st.unpack('<44B', pkt_data)
             else:
-                d.row[cnt,108:]  = struct.unpack('<44B', pkt_data)
+                d.row[cnt,108:]  = st.unpack('<44B', pkt_data)
                 d.sample_cnt    += 1
-                if d.sample_cnt == d.samples:
+                if d.sample_cnt == s.samples:
                     print('I: All packets were received.')
         else:
             print('W: Extra packet received! Appending to data dump.')
             d.dump.append([pkt_status, pkt_type, pkt_data])
+            print([pkt_status, pkt_type, pkt_data])
     elif ( pkt_type == p.cmd_get_settings ):
-        (d.ts, d.mem_page_start) = struct.unpack('<2H', pkt_data)
+        (s.ts, s.mem_page_start) = st.unpack('<2H', pkt_data)
     elif ( pkt_type == p.cmd_calibrate_gyro ):
-        d.gyro_calib = struct.unpack('<3f', pkt_data)
+        d.gyro_calib = st.unpack('<3f', pkt_data)
     else:
         print('E: Invalid packet received! Appending to data dump.')
         d.dump.append([pkt_status, pkt_type, pkt_data])
+        print([pkt_status, pkt_type, pkt_data])
 
 #def vicon_callback(packet_v):
-#    globals d, do_capture_vicon
+#    globals s, d, do_capture_vicon
 #
 #    cnt_v = d.sample_v_cnt
-#    if do_capture_vicon and (cnt_v < d.samples_v):
+#    if do_capture_vicon and (cnt_v < s.samples_v):
 #        d.ts_v[cnt_v]   = [packet_v.header.stamp.secs, \
 #                           packet_v.header.stamp.nsecs]
 #        d.pos_v[cnt_v]  = [packet_v.transform.translation.x, \
