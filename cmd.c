@@ -68,8 +68,7 @@
 #define CMD_GET_SETTINGS          6
 #define CMD_SET_SAMPLING_PERIOD   7
 #define CMD_SET_MEMORY_PAGE_START 8
-#define CMD_CALIBRATE_GYRO        0x0d
-#define CMD_GET_GYRO_CALIBRATION  0x0e
+#define CMD_CALIBRATE_GYRO        9
 
 /* Capture Parameters */
 #define ROW_SIZE        152  // [bytes]
@@ -135,9 +134,6 @@ static void cmdSetMemoryPageStart (unsigned char status,
 static void      cmdCalibrateGyro (unsigned char status,
                                    unsigned char length,
                                    unsigned char *frame);
-static void cmdGetGyroCalibration (unsigned char status,
-                                   unsigned char length,
-                                   unsigned char *frame);
 
 
 /*-----------------------------------------------------------------------------
@@ -158,7 +154,6 @@ void cmdSetup (void)
     cmd_func[CMD_SET_SAMPLING_PERIOD]   = &cmdSetSamplingPeriod;
     cmd_func[CMD_SET_MEMORY_PAGE_START] = &cmdSetMemoryPageStart;
     cmd_func[CMD_CALIBRATE_GYRO]        = &cmdCalibrateGyro;
-    cmd_func[CMD_GET_GYRO_CALIBRATION]  = &cmdGetGyroCalibration;
 }
 
 void cmdResetSettings (void)
@@ -369,19 +364,12 @@ static void cmdCalibrateGyro (unsigned char status,
                               unsigned char length,
                               unsigned char *frame)
 {
-    unsigned int count = frame[0] + (frame[1] << 8);
-
     LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 1;
 
-    gyroRunCalib(count);
+    gyroRunCalib(2000);
+
+    radioSendData(DEST_ADDR, 0, CMD_CALIBRATE_GYRO,
+                    3*sizeof(float), gyroGetCalibParam(), RADIO_DATA_SAFE);
 
     LED_GREEN = 0; LED_ORANGE = 0;
-}
-
-static void cmdGetGyroCalibration (unsigned char status,
-                                   unsigned char length,
-                                   unsigned char *frame)
-{
-    radioSendData(DEST_ADDR, 0, CMD_GET_GYRO_CALIBRATION,
-                    12, gyroGetCalibParam(), RADIO_DATA_SAFE);
 }

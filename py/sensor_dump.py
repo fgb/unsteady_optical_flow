@@ -133,9 +133,8 @@ def main():
     if p.do_run_robot:
 
         print('I: Running gyro calibration...')
-        wrl.send(p.dest_addr, 0, p.cmd_calibrate_gyro, struct.pack('<H', 2000))
+        wrl.send(p.dest_addr, 0, p.cmd_calibrate_gyro)
         time.sleep(2)
-        wrl.send(p.dest_addr, 0, p.cmd_get_gyro_calibration, ' ')
 
         print('I: Erasing memory contents...')
         # TODO (fgb) : Request n seconds instead of samples
@@ -201,9 +200,7 @@ def received(packet):
     pkt_type   = pld.type
     pkt_data   = pld.data
 
-    if ( pkt_type == p.cmd_get_gyro_calibration ):
-        d.gyro_calib = struct.unpack('<3f', pkt_data)
-    elif ( pkt_type == p.cmd_read_memory ):
+    if ( pkt_type == p.cmd_read_memory ):
         d.packet_cnt += 1
         cnt = d.sample_cnt
         pkt_index = pkt_status % 4
@@ -232,6 +229,8 @@ def received(packet):
             d.dump.append([pkt_status, pkt_type, pkt_data])
     elif ( pkt_type == p.cmd_get_settings ):
         (d.ts, d.mem_page_start) = struct.unpack('<2H', pkt_data)
+    elif ( pkt_type == p.cmd_calibrate_gyro ):
+        d.gyro_calib = struct.unpack('<3f', pkt_data)
     else:
         print('E: Invalid packet received! Appending to data dump.')
         d.dump.append([pkt_status, pkt_type, pkt_data])
