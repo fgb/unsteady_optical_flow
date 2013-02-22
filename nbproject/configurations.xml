@@ -13,7 +13,6 @@
         <itemPath>../imageproc-lib/ovcamHS.s</itemPath>
         <itemPath>../imageproc-lib/at86rf231_driver.c</itemPath>
         <itemPath>../imageproc-lib/mac_packet.c</itemPath>
-        <itemPath>../imageproc-lib/init.c</itemPath>
         <itemPath>../imageproc-lib/ppool.c</itemPath>
         <itemPath>../imageproc-lib/radio.c</itemPath>
         <itemPath>../imageproc-lib/cam.c</itemPath>
@@ -21,15 +20,15 @@
         <itemPath>../imageproc-lib/dfmem.c</itemPath>
         <itemPath>../imageproc-lib/payload.c</itemPath>
         <itemPath>../imageproc-lib/spi_controller.c</itemPath>
-        <itemPath>../imageproc-lib/queue.c</itemPath>
         <itemPath>../imageproc-lib/carray.c</itemPath>
         <itemPath>../imageproc-lib/sclock.c</itemPath>
-        <itemPath>../imageproc-lib/interrupts.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
       <itemPath>cmd.c</itemPath>
       <itemPath>motor_ctrl.c</itemPath>
       <itemPath>cambuff.c</itemPath>
+      <itemPath>init.c</itemPath>
+      <itemPath>interrupts.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -103,7 +102,7 @@
         <property key="optimization-level" value="0"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
-        <property key="preprocessor-macros" value="__IMAGEPROC2;__DFMEM_32MBIT"/>
+        <property key="preprocessor-macros" value="__IMAGEPROC2"/>
         <property key="scalar-model" value="default"/>
         <property key="use-cci" value="false"/>
       </C30>
@@ -127,6 +126,7 @@
         <property key="warning-level" value="emit-warnings"/>
       </C30-AS>
       <C30-LD>
+        <property key="additional-options-use-response-files" value="false"/>
         <property key="boot-eeprom" value="no_eeprom"/>
         <property key="boot-flash" value="no_flash"/>
         <property key="boot-ram" value="no_ram"/>
@@ -169,8 +169,8 @@
         <property key="oXC16glb-macros" value=""/>
         <property key="output-file-format" value="elf"/>
       </C30Global>
-      <ICD3PlatformTool>
-      </ICD3PlatformTool>
+      <PICkit3PlatformTool>
+      </PICkit3PlatformTool>
     </conf>
   </confs>
 </configurationDescriptor>
