@@ -47,6 +47,7 @@
 
 #include "payload.h"
 #include "radio.h"
+#include "at86rf231_driver.h"
 #include "radio_settings.h"
 
 #include "dfmem.h"
@@ -323,6 +324,7 @@ static void cmdReadMemory (unsigned char status,
             paySetType(pld, CMD_READ_MEMORY);
 
             while ( !radioEnqueueTxPacket(packet) ) radioProcess();
+            while ( trxGetLastACKd() )              radioProcess();
 
             mem_byte += pld_size;
 

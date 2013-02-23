@@ -166,6 +166,7 @@ def main():
         #wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, st.pack('<f', 0))
         #time.sleep(0.5)
 
+    # TODO (fgb) : Why not get an ACK that triggers this?
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
     do_capture_vicon = False
     print('I: Requesting memory contents...')
