@@ -50,12 +50,10 @@ import sys, os, time, traceback, logging as lg, argparse, shelve, pickle
 import struct as st, numpy as np
 from imageproc_py import radio, payload, utils
 
-#import roslib; roslib.load_manifest('vicon_bridge')
-#import rospy
-#from geometry_msgs.msg import TransformStamped
 
 def main():
-    global p, s, d, do_capture_vicon
+
+    global p, s, d, do_save_vicon_stream
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
@@ -125,22 +123,30 @@ def main():
     data['row_valid']  = np.zeros((s.samples,   1), dtype=np.uint8)
     data['row']        = np.zeros((s.samples, 152), dtype=np.uint8)
 
-    data['sample_v_cnt'] = 0
+    if p.do_stream_vicon:
 
-    data['ts_v']   = np.zeros((s.samples_v, 2))
-    data['pos_v']  = np.zeros((s.samples_v, 3))
-    data['qorn_v'] = np.zeros((s.samples_v, 4))
+        data['sample_v_cnt'] = 0
+
+        data['ts_v']   = np.zeros((s.samples_v, 2))
+        data['pos_v']  = np.zeros((s.samples_v, 3))
+        data['qorn_v'] = np.zeros((s.samples_v, 4))
 
     data['dump'] = []
 
     d = utils.Bunch(data)
 
-    # Subscribe to Vicon stream
-    #rospy.init_node('sensor_dump')
-    #rospy.Subscriber('/vicon/vamp/Body', TransformStamped, vicon_callback);
-    #do_capture_vicon = False
+    if p.do_stream_vicon:
 
-    if p.dump_sensors:
+        import roslib, rospy
+        from geometry_msgs.msg import TransformStamped
+        roslib.load_manifest('vicon_bridge')
+
+        # Subscribe to Vicon stream
+        do_save_vicon_stream = False
+        rospy.init_node('sensor_dump')
+        rospy.Subscriber('/vicon/vamp/Body', TransformStamped, vicon_callback)
+
+    if p.do_capture_sensors:
 
         print('I: Running gyro calibration...')
         wrl.send(p.dest_addr, 0, p.cmd_calibrate_gyro)
@@ -151,7 +157,7 @@ def main():
         time.sleep(p.t + 1)
 
         raw_input('Q: To start the run, please [PRESS ANY KEY]')
-        do_capture_vicon = True
+        do_save_vicon_stream = True
         print('I: Setting motor to desired duty cycle...')
         wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, st.pack('<f', p.dcval))
         time.sleep(2)
@@ -168,7 +174,7 @@ def main():
 
     # TODO (fgb) : Why not get an ACK that triggers this?
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
-    do_capture_vicon = False
+    do_save_vicon_stream = False
     print('I: Requesting memory contents...')
     wrl.send(p.dest_addr, 0, p.cmd_read_memory, st.pack('<2H', s.samples, 44))
     raw_input('Q: When data has been received, please [PRESS ANY KEY]')
@@ -199,7 +205,9 @@ def main():
     os.symlink(datafile_shelf, latest_symlink)
     print('I: Linked session to ' + os.path.basename(latest_symlink))
 
+
 def received(packet):
+
     global p, s, d
 
     pld        = payload.Payload(packet.get('rf_data'))
@@ -244,23 +252,25 @@ def received(packet):
         d.dump.append([pkt_status, pkt_type, pkt_data])
         print([pkt_status, pkt_type, pkt_data])
 
-#def vicon_callback(packet_v):
-#    globals s, d, do_capture_vicon
-#
-#    cnt_v = d.sample_v_cnt
-#    if do_capture_vicon and (cnt_v < s.samples_v):
-#        d.ts_v[cnt_v]   = [packet_v.header.stamp.secs, \
-#                           packet_v.header.stamp.nsecs]
-#        d.pos_v[cnt_v]  = [packet_v.transform.translation.x, \
-#                           packet_v.transform.translation.y, \
-#                           packet_v.transform.translation.z]
-#        d.qorn_v[cnt_v] = [packet_v.transform.rotation.w, \
-#                           packet_v.transform.rotation.x, \
-#                           packet_v.transform.rotation.y, \
-#                           packet_v.transform.rotation.z, ]
-#        d.sample_v_cnt += 1
 
-### Exception handling
+def vicon_callback(packet_v):
+
+    global s, d, do_save_vicon_stream
+
+    cnt_v = d.sample_v_cnt
+    if p.do_stream_vicon and do_save_vicon_stream and (cnt_v < s.samples_v):
+
+        d.ts_v[cnt_v]   = [packet_v.header.stamp.secs, \
+                           packet_v.header.stamp.nsecs]
+        d.pos_v[cnt_v]  = [packet_v.transform.translation.x, \
+                           packet_v.transform.translation.y, \
+                           packet_v.transform.translation.z]
+        d.qorn_v[cnt_v] = [packet_v.transform.rotation.w, \
+                           packet_v.transform.rotation.x, \
+                           packet_v.transform.rotation.y, \
+                           packet_v.transform.rotation.z, ]
+        d.sample_v_cnt += 1
+
 
 if __name__ == '__main__':
     try:
@@ -270,6 +280,7 @@ if __name__ == '__main__':
         print('\nI: SystemExit: ' + str(e))
     except KeyboardInterrupt:
         print('\nI: KeyboardInterrupt')
+    # TODO (fgb) : If we're just passing on this, is it necessary at all?
     #except rospy.ROSInterruptException:
     #    pass
     except Exception as e:
