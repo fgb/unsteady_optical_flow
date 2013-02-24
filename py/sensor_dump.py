@@ -93,10 +93,11 @@ def main():
     # Capture settings
     settings = {}
 
-    settings['ts']             = 0
-    settings['mem_page_start'] = 0
-    settings['samples']        = 0
-    settings['samples_v']      = int(p.t_v * p.fs_v)
+    settings['ts']               = 0
+    settings['mem_page_start']   = 0
+    settings['motor_duty_cycle'] = 0
+    settings['samples']          = 0
+    settings['samples_v']        = int(p.t_v * p.fs_v)
 
     s = utils.Bunch(settings)
 
@@ -104,7 +105,9 @@ def main():
     wrl.send(p.dest_addr, 0, p.cmd_get_settings)
     time.sleep(1)
 
-    s.samples = int(p.t * p.t_factor / s.ts)
+    s.samples          = int(p.t * p.t_factor / s.ts)
+    s.sample_motor_on  = int(p.motor_on  * p.t * p.t_factor / s.ts)
+    s.sample_motor_off = int(p.motor_off * p.t * p.t_factor / s.ts)
 
     # Data
     data = {}
@@ -116,7 +119,7 @@ def main():
     data['bemf_ts']    = np.zeros((s.samples,   1), dtype=np.uint32)
     data['bemf']       = np.zeros((s.samples,   1), dtype=np.uint16)
     data['gyro_ts']    = np.zeros((s.samples,   1), dtype=np.uint32)
-    data['gyro_calib'] = np.zeros((             3), dtype=np.float32)
+    data['gyro_calib'] = np.zeros(             (3), dtype=np.float32)
     data['gyro']       = np.zeros((s.samples,   3), dtype=np.int16)
     data['row_ts']     = np.zeros((s.samples,   1), dtype=np.uint32)
     data['row_num']    = np.zeros((s.samples,   1), dtype=np.uint8)
@@ -154,23 +157,18 @@ def main():
 
         print('I: Erasing memory contents...')
         wrl.send(p.dest_addr, 0, p.cmd_erase_memory, st.pack('<H', s.samples))
-        time.sleep(p.t + 1)
+        time.sleep(p.t * 2)
+
+        print('I: Setting desired motor duty cycle for...')
+        wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, \
+                                            st.pack('<f', p.motor_duty_cycle))
 
         raw_input('Q: To start the run, please [PRESS ANY KEY]')
         do_save_vicon_stream = True
-        print('I: Setting motor to desired duty cycle...')
-        wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, st.pack('<f', p.dcval))
-        time.sleep(2)
-
         print('I: Requesting a sensor dump into memory...')
         wrl.send(p.dest_addr, 0, p.cmd_record_sensor_dump, \
-                                                    st.pack('<H', s.samples))
+            st.pack('<3H', s.samples, s.sample_motor_on, s.sample_motor_off))
         time.sleep(p.t + 1)
-
-        #raw_input('Q: To stop the run, please [PRESS ANY KEY]')
-        #print('I: Stopping motor...') # automatically done halfway through dump
-        #wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, st.pack('<f', 0))
-        #time.sleep(0.5)
 
     # TODO (fgb) : Why not get an ACK that triggers this?
     raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
@@ -178,8 +176,8 @@ def main():
     print('I: Requesting memory contents...')
     wrl.send(p.dest_addr, 0, p.cmd_read_memory, st.pack('<2H', s.samples, 44))
     raw_input('Q: When data has been received, please [PRESS ANY KEY]')
-    print('I: ' + str(d.packet_cnt) + ' packets received, including ' + \
-                                            str(d.sample_cnt) + ' samples.')
+    print('I: Received ' + str(d.sample_cnt) + ' samples (' + \
+                                            str(d.packet_cnt) + ' packets)')
 
     # Shelve session information
     datafile_shelf = datafile + '_session.shelf'
@@ -244,7 +242,9 @@ def received(packet):
             d.dump.append([pkt_status, pkt_type, pkt_data])
             print([pkt_status, pkt_type, pkt_data])
     elif ( pkt_type == p.cmd_get_settings ):
-        (s.ts, s.mem_page_start) = st.unpack('<2H', pkt_data)
+        s.ts               = st.unpack('<H', pkt_data[:2])[0]
+        s.mem_page_start   = st.unpack('<H', pkt_data[2:4])[0]
+        s.motor_duty_cycle = st.unpack('<f', pkt_data[4:])[0]
     elif ( pkt_type == p.cmd_calibrate_gyro ):
         d.gyro_calib = st.unpack('<3f', pkt_data)
     else:

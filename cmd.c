@@ -62,14 +62,14 @@
 #define CMD_MAX     0xFF
 
 // TODO (fgb) : Should these be part of py-generated h file?
-#define CMD_SET_MOTOR_SPEED       0
 #define CMD_ERASE_MEMORY          3
 #define CMD_RECORD_SENSOR_DUMP    4
 #define CMD_READ_MEMORY           5
 #define CMD_GET_SETTINGS          6
 #define CMD_SET_SAMPLING_PERIOD   7
 #define CMD_SET_MEMORY_PAGE_START 8
-#define CMD_CALIBRATE_GYRO        9
+#define CMD_SET_MOTOR_SPEED       9
+#define CMD_CALIBRATE_GYRO        10
 
 /* Capture Parameters */
 #define ROW_SIZE        152  // [bytes]
@@ -100,10 +100,11 @@ union {
 
 union {
     struct {
-        unsigned int sampling_period;
-        unsigned int mem_page_start;
+        unsigned int    sampling_period;
+        unsigned int    mem_page_start;
+        float           motor_duty_cycle;
     };
-    unsigned char contents[2 * sizeof(unsigned int)];
+    unsigned char contents[2 * sizeof(unsigned int) + sizeof(float)];
 } settings;
 
 
@@ -111,9 +112,6 @@ union {
  *          Declaration of private functions
  *--------------------------------------------------------------------------*/
 
-static void      cmdSetMotorSpeed (unsigned char status,
-                                   unsigned char length,
-                                   unsigned char *frame);
 static void        cmdEraseMemory (unsigned char status,
                                    unsigned char length,
                                    unsigned char *frame);
@@ -132,6 +130,9 @@ static void  cmdSetSamplingPeriod (unsigned char status,
 static void cmdSetMemoryPageStart (unsigned char status,
                                    unsigned char length,
                                    unsigned char *frame);
+static void      cmdSetMotorSpeed (unsigned char status,
+                                   unsigned char length,
+                                   unsigned char *frame);
 static void      cmdCalibrateGyro (unsigned char status,
                                    unsigned char length,
                                    unsigned char *frame);
@@ -147,20 +148,21 @@ void cmdSetup (void)
 
     for ( i = 0; i < CMD_MAX; ++i ) cmd_func[i] = NULL;
 
-    cmd_func[CMD_SET_MOTOR_SPEED]       = &cmdSetMotorSpeed;
     cmd_func[CMD_ERASE_MEMORY]          = &cmdEraseMemory;
     cmd_func[CMD_RECORD_SENSOR_DUMP]    = &cmdRecordSensorDump;
     cmd_func[CMD_READ_MEMORY]           = &cmdReadMemory;
     cmd_func[CMD_GET_SETTINGS]          = &cmdGetSettings;
     cmd_func[CMD_SET_SAMPLING_PERIOD]   = &cmdSetSamplingPeriod;
     cmd_func[CMD_SET_MEMORY_PAGE_START] = &cmdSetMemoryPageStart;
+    cmd_func[CMD_SET_MOTOR_SPEED]       = &cmdSetMotorSpeed;
     cmd_func[CMD_CALIBRATE_GYRO]        = &cmdCalibrateGyro;
 }
 
 void cmdResetSettings (void)
 {
-    settings.sampling_period = 1000;
-    settings.mem_page_start  = 128;
+    settings.sampling_period  = 1000;
+    settings.mem_page_start   = 128;
+    settings.motor_duty_cycle = 0;
 }
 
 void cmdHandleRadioRxBuffer (void)
@@ -189,22 +191,6 @@ void cmdHandleRadioRxBuffer (void)
  *          Private functions
  *---------------------------------------------------------------------------*/
 
-static void cmdSetMotorSpeed (unsigned char status,
-                              unsigned char length,
-                              unsigned char *frame)
-{
-    // TODO (fgb) : Simplify extraction of frame
-    unsigned char dc_chr[4];
-    float *duty_cycle = (float*)dc_chr;
-
-    dc_chr[0] = frame[0];
-    dc_chr[1] = frame[1];
-    dc_chr[2] = frame[2];
-    dc_chr[3] = frame[3];
-
-    mcSetDutyCycle(MC_CHANNEL_PWM1, *duty_cycle);
-}
-
 static void cmdEraseMemory (unsigned char status,
                             unsigned char length,
                             unsigned char *frame)
@@ -229,6 +215,8 @@ static void cmdRecordSensorDump (unsigned char status,
                                  unsigned char *frame)
 {
     unsigned int  samples          = frame[0] + (frame[1] << 8),
+                  sample_motor_on  = frame[1] + (frame[2] << 8),
+                  sample_motor_off = frame[3] + (frame[4] << 8),
                   count            = 0,
                   mem_byte         = 0,
                   mem_page         = settings.mem_page_start;
@@ -280,8 +268,13 @@ static void cmdRecordSensorDump (unsigned char status,
                 mem_byte = 0;
             }
 
-            // Stop motor while still sampling, to capture final glide/crash
-            if ( count == samples/2 ) mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
+            // Control motor during sampling
+            if ( count == sample_motor_on )
+            {
+                mcSetDutyCycle(MC_CHANNEL_PWM1, settings.motor_duty_cycle);
+            } else if ( count == sample_motor_off ) {
+                mcSetDutyCycle(MC_CHANNEL_PWM1, 0);
+            }
 
             next_sample_time += settings.sampling_period;
         }
@@ -359,6 +352,22 @@ static void  cmdSetMemoryPageStart (unsigned char status,
                                     unsigned char *frame)
 {
     settings.mem_page_start = frame[0] + (frame[1] << 8);
+}
+
+static void cmdSetMotorSpeed (unsigned char status,
+                              unsigned char length,
+                              unsigned char *frame)
+{
+    // TODO (fgb) : Simplify extraction of frame
+    unsigned char dc_chr[4];
+    float *duty_cycle = (float *) dc_chr;
+
+    dc_chr[0] = frame[0];
+    dc_chr[1] = frame[1];
+    dc_chr[2] = frame[2];
+    dc_chr[3] = frame[3];
+
+    settings.motor_duty_cycle = *duty_cycle;
 }
 
 static void cmdCalibrateGyro (unsigned char status,
