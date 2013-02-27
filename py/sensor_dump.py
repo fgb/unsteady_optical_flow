@@ -159,11 +159,11 @@ def main():
         wrl.send(p.dest_addr, 0, p.cmd_erase_memory, st.pack('<H', s.samples))
         time.sleep(p.t * 2)
 
-        print('I: Setting desired motor duty cycle for...')
+        print('I: Setting desired motor duty cycle...')
         wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, \
                                             st.pack('<f', p.motor_duty_cycle))
 
-        raw_input('Q: To start the run, please [PRESS ANY KEY]')
+        raw_input('\nQ: To start the run, please [PRESS ENTER]')
         do_save_vicon_stream = True
         print('I: Requesting a sensor dump into memory...')
         wrl.send(p.dest_addr, 0, p.cmd_record_sensor_dump, \
@@ -171,11 +171,11 @@ def main():
         time.sleep(p.t + 1)
 
     # TODO (fgb) : Why not get an ACK that triggers this?
-    raw_input('Q: To request a memory dump, please [PRESS ANY KEY]')
+    raw_input('\nQ: To request a memory dump, please [PRESS ENTER]')
     do_save_vicon_stream = False
     print('I: Requesting memory contents...')
     wrl.send(p.dest_addr, 0, p.cmd_read_memory, st.pack('<2H', s.samples, 44))
-    raw_input('Q: When data has been received, please [PRESS ANY KEY]')
+    raw_input('\nQ: When data has been received, please [PRESS ENTER]')
     print('I: Received ' + str(d.sample_cnt) + ' samples (' + \
                                             str(d.packet_cnt) + ' packets)')
 
@@ -195,13 +195,14 @@ def main():
     shelf['s'] = globals()['s']
     shelf['d'] = globals()['d']
     shelf.close()
-    print('I: Saved session to ' + os.path.basename(datafile_shelf))
 
     latest_symlink = root + 'latest_session.shelf'
     if os.path.exists(latest_symlink):
         os.remove(latest_symlink)
     os.symlink(datafile_shelf, latest_symlink)
-    print('I: Linked session to ' + os.path.basename(latest_symlink))
+
+    print('I: Saved session to ' + os.path.basename(datafile_shelf) + \
+                    ' (symlink at ' + os.path.basename(latest_symlink) + ')')
 
 
 def received(packet):
@@ -214,33 +215,57 @@ def received(packet):
     pkt_data   = pld.data
 
     if ( pkt_type == p.cmd_read_memory ):
-        d.packet_cnt += 1
+
+        # TODO (fgb) : Ensure packets received are contiguously saved!!!
         cnt = d.sample_cnt
-        pkt_index = pkt_status % 4
+
         if cnt < s.samples:
+
+            if pkt_status != (d.packet_cnt % 256):
+                print('W: Received packet status (' + str(pkt_status) + \
+                ') does not match expectations (' + str(d.packet_cnt%256) + ')')
+
+            pkt_index = pkt_status % 4
+
             if pkt_index == 0:
-                d.id[cnt]        = st.unpack('<H',   pkt_data[:2])
-                d.bemf_ts[cnt]   = st.unpack('<L',   pkt_data[2:6])
-                d.bemf[cnt]      = st.unpack('<H',   pkt_data[6:8])
-                d.gyro_ts[cnt]   = st.unpack('<L',   pkt_data[8:12])
+
+                d.id[cnt]        = st.unpack('<H',   pkt_data[:2]   )
+                d.bemf_ts[cnt]   = st.unpack('<L',   pkt_data[2:6]  )
+                d.bemf[cnt]      = st.unpack('<H',   pkt_data[6:8]  )
+                d.gyro_ts[cnt]   = st.unpack('<L',   pkt_data[8:12] )
                 d.gyro[cnt]      = st.unpack('<3h',  pkt_data[12:18])
                 d.row_ts[cnt]    = st.unpack('<L',   pkt_data[18:22])
                 d.row_num[cnt]   = st.unpack('<B',   pkt_data[22:23])
                 d.row_valid[cnt] = st.unpack('<B',   pkt_data[23:24])
-                d.row[cnt,:20]   = st.unpack('<20B', pkt_data[24:])
+                d.row[cnt,:20]   = st.unpack('<20B', pkt_data[24:]  )
+
+                if cnt != d.id[cnt]:
+                    print( str(cnt) + ' - ' + str(d.id[cnt]) )
+                    #print('W: Received sample id (' + str(d.id[cnt][0]) + \
+                    #        ') does not match sample count (' + str(cnt) + ')')
+
             elif pkt_index == 1:
+
                 d.row[cnt,20:64] = st.unpack('<44B', pkt_data)
+
             elif pkt_index == 2:
+
                 d.row[cnt,64:108]= st.unpack('<44B', pkt_data)
+
             else:
+
                 d.row[cnt,108:]  = st.unpack('<44B', pkt_data)
                 d.sample_cnt    += 1
                 if d.sample_cnt == s.samples:
                     print('I: All packets were received.')
+
         else:
             print('W: Extra packet received! Appending to data dump.')
             d.dump.append([pkt_status, pkt_type, pkt_data])
             print([pkt_status, pkt_type, pkt_data])
+
+        d.packet_cnt += 1
+
     elif ( pkt_type == p.cmd_get_settings ):
         s.ts               = st.unpack('<H', pkt_data[:2])[0]
         s.mem_page_start   = st.unpack('<H', pkt_data[2:4])[0]
