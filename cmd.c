@@ -100,9 +100,9 @@ union {
 
 union {
     struct {
-        unsigned int    sampling_period;
-        unsigned int    mem_page_start;
-        float           motor_duty_cycle;
+        unsigned int sampling_period;
+        unsigned int mem_page_start;
+        float        motor_duty_cycle;
     };
     unsigned char contents[2 * sizeof(unsigned int) + sizeof(float)];
 } settings;
@@ -195,9 +195,9 @@ static void cmdEraseMemory (unsigned char status,
                             unsigned char length,
                             unsigned char *frame)
 {
-    unsigned int  samples      = frame[0] + (frame[1] << 8),
-                  mem_page     = settings.mem_page_start,
-                  mem_page_max = mem_page + samples/3 + MEM_SECTOR_SIZE;
+    unsigned int  samples       = frame[0] + (frame[1] << 8),
+                  mem_page      = settings.mem_page_start,
+                  mem_page_last = settings.mem_page_start + samples/3;
 
     LED_GREEN = 0; LED_RED = 1; LED_ORANGE = 0;
 
@@ -205,7 +205,7 @@ static void cmdEraseMemory (unsigned char status,
     {
         dfmemEraseSector(mem_page);
         mem_page += MEM_SECTOR_SIZE;
-    } while (mem_page < mem_page_max);
+    } while ( mem_page < mem_page_last );
 
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
 }
@@ -237,15 +237,15 @@ static void cmdRecordSensorDump (unsigned char status,
             {
                 row_buff         = cambuffGetRow();
                 sample.row_ts    = row_buff->timestamp;
-                sample.row_num   = (unsigned int) row_buff->row_num;
+                sample.row_num   = (unsigned char) row_buff->row_num;
                 sample.row_valid = 1;
                 memcpy ( sample.row, row_buff->pixels, ROW_SIZE );
                 cambuffReturnRow(row_buff);
             } else {
                 sample.row_ts    = 0;
-                sample.row_num   = 0xFF;
+                sample.row_num   = 0;
                 sample.row_valid = 0;
-                memset(sample.row, 0, ROW_SIZE);
+                memset ( sample.row, 0, ROW_SIZE );
             }
 
             sample.gyro_ts = sclockGetTime();               // Gyroscope
@@ -289,9 +289,11 @@ static void cmdReadMemory (unsigned char status,
                            unsigned char length,
                            unsigned char *frame)
 {
-    unsigned int samples  = frame[0] + (frame[1] << 8),
-                 pld_size = frame[2] + (frame[3] << 8),
-                 page, mem_byte;
+    unsigned int samples       = frame[0] + (frame[1] << 8),
+                 pld_size      = frame[2] + (frame[3] << 8),
+                 mem_byte      = 0,
+                 mem_page      = settings.mem_page_start,
+                 mem_page_last = settings.mem_page_start + samples/3;
     unsigned char count = 0;
 
     MacPacket packet;
@@ -299,33 +301,34 @@ static void cmdReadMemory (unsigned char status,
 
     LED_GREEN = 1; LED_RED = 0; LED_ORANGE = 0;
 
-    for ( page = settings.mem_page_start;
-            page < (settings.mem_page_start + samples/3); ++page )
+    do
     {
-        mem_byte = 0;
         do
         {
             radioProcess();
             packet = radioRequestPacket(pld_size);
-            if(packet == NULL) continue;
+            if ( packet == NULL ) continue;
             macSetDestPan(packet, PAN_ID);
             macSetDestAddr(packet, DEST_ADDR);
 
             pld = macGetPayload(packet);
-            dfmemRead(page, mem_byte, pld_size, payGetData(pld));
+            dfmemRead ( mem_page, mem_byte, pld_size, payGetData(pld) );
             paySetStatus(pld, count++);
             paySetType(pld, CMD_READ_MEMORY);
 
             while ( !radioEnqueueTxPacket(packet) ) radioProcess();
-            while ( trxGetLastACKd() )              radioProcess();
+            //while ( trxGetLastACKd() )              radioProcess();
 
             mem_byte += pld_size;
 
         } while ( mem_byte <= (MEM_PAGE_SIZE - pld_size) );
 
-        if ( (page >> 7) & 0x1 ) LED_GREEN = ~LED_GREEN;
+        mem_page++;
+        mem_byte = 0;
 
-    }
+        if ( mem_page & MEM_SECTOR_SIZE ) LED_GREEN = ~LED_GREEN;
+
+    } while ( mem_page < mem_page_last );
 
     LED_GREEN = 1; LED_RED = 1; LED_ORANGE = 1;
     delay_ms(2000);
