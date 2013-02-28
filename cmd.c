@@ -62,6 +62,7 @@
 #define CMD_MAX     0xFF
 
 // TODO (fgb) : Should these be part of py-generated h file?
+#define CMD_RESET                 0
 #define CMD_ERASE_MEMORY          3
 #define CMD_RECORD_SENSOR_DUMP    4
 #define CMD_READ_MEMORY           5
@@ -71,10 +72,14 @@
 #define CMD_SET_MOTOR_SPEED       9
 #define CMD_CALIBRATE_GYRO        10
 
-/* Capture Parameters */
-#define ROW_SIZE        152  // [bytes]
-#define MEM_PAGE_SIZE   528  // [bytes]
-#define MEM_SECTOR_SIZE 128  // [pages]
+/* Default Settings */
+#define DEFAULT_SAMPLING_PERIOD  1000 // [us]
+#define DEFAULT_MEM_PAGE_START   128
+#define DEFAULT_MOTOR_DUTY_CYCLE 0
+
+#define DEFAULT_ROW_SIZE         152  // [bytes]
+#define DEFAULT_MEM_PAGE_SIZE    528  // [bytes]
+#define DEFAULT_MEM_SECTOR_SIZE  128  // [pages]
 
 
 /*-----------------------------------------------------------------------------
@@ -93,7 +98,7 @@ union {
         unsigned long row_ts;               // (4)
         unsigned char row_num;              // (1)   physical row number
         unsigned char row_valid;            // (1)   was row captured?
-        unsigned char row[ROW_SIZE];        // (152) camera image row
+        unsigned char row[DEFAULT_ROW_SIZE];// (152) camera image row
     };
     unsigned char contents[176];
 } sample;
@@ -112,6 +117,9 @@ union {
  *          Declaration of private functions
  *--------------------------------------------------------------------------*/
 
+static void              cmdReset (unsigned char status,
+                                   unsigned char length,
+                                   unsigned char *frame);
 static void        cmdEraseMemory (unsigned char status,
                                    unsigned char length,
                                    unsigned char *frame);
@@ -148,6 +156,7 @@ void cmdSetup (void)
 
     for ( i = 0; i < CMD_MAX; ++i ) cmd_func[i] = NULL;
 
+    cmd_func[CMD_RESET]                 = &cmdReset;
     cmd_func[CMD_ERASE_MEMORY]          = &cmdEraseMemory;
     cmd_func[CMD_RECORD_SENSOR_DUMP]    = &cmdRecordSensorDump;
     cmd_func[CMD_READ_MEMORY]           = &cmdReadMemory;
@@ -160,9 +169,9 @@ void cmdSetup (void)
 
 void cmdResetSettings (void)
 {
-    settings.sampling_period  = 1000;
-    settings.mem_page_start   = 128;
-    settings.motor_duty_cycle = 0;
+    settings.sampling_period  = DEFAULT_SAMPLING_PERIOD;
+    settings.mem_page_start   = DEFAULT_MEM_PAGE_START;
+    settings.motor_duty_cycle = DEFAULT_MOTOR_DUTY_CYCLE;
 }
 
 void cmdHandleRadioRxBuffer (void)
@@ -191,6 +200,13 @@ void cmdHandleRadioRxBuffer (void)
  *          Private functions
  *---------------------------------------------------------------------------*/
 
+static void cmdReset (unsigned char status,
+                      unsigned char length,
+                      unsigned char *frame)
+{
+    asm volatile("reset");
+}
+
 static void cmdEraseMemory (unsigned char status,
                             unsigned char length,
                             unsigned char *frame)
@@ -204,7 +220,7 @@ static void cmdEraseMemory (unsigned char status,
     do
     {
         dfmemEraseSector(mem_page);
-        mem_page += MEM_SECTOR_SIZE;
+        mem_page += DEFAULT_MEM_SECTOR_SIZE;
     } while ( mem_page < mem_page_last );
 
     LED_GREEN = 0; LED_RED = 0; LED_ORANGE = 0;
@@ -239,13 +255,13 @@ static void cmdRecordSensorDump (unsigned char status,
                 sample.row_ts    = row_buff->timestamp;
                 sample.row_num   = (unsigned char) row_buff->row_num;
                 sample.row_valid = 1;
-                memcpy ( sample.row, row_buff->pixels, ROW_SIZE );
+                memcpy ( sample.row, row_buff->pixels, DEFAULT_ROW_SIZE );
                 cambuffReturnRow(row_buff);
             } else {
                 sample.row_ts    = 0;
                 sample.row_num   = 0;
                 sample.row_valid = 0;
-                memset ( sample.row, 0, ROW_SIZE );
+                memset ( sample.row, 0, DEFAULT_ROW_SIZE );
             }
 
             sample.gyro_ts = sclockGetTime();               // Gyroscope
@@ -261,7 +277,7 @@ static void cmdRecordSensorDump (unsigned char status,
             mem_byte += sizeof(sample);
 
             // If buffer is about to overflow, write it to memory
-            if ( mem_byte > (MEM_PAGE_SIZE - sizeof(sample)) )
+            if ( mem_byte > (DEFAULT_MEM_PAGE_SIZE - sizeof(sample)) )
             {
                 dfmemWriteBuffer2MemoryNoErase ( mem_page++, buffer );
                 buffer  ^= 0x1;  // toggle between buffer 0 and 1
@@ -321,12 +337,12 @@ static void cmdReadMemory (unsigned char status,
 
             mem_byte += pld_size;
 
-        } while ( mem_byte <= (MEM_PAGE_SIZE - pld_size) );
+        } while ( mem_byte <= (DEFAULT_MEM_PAGE_SIZE - pld_size) );
 
         mem_page++;
         mem_byte = 0;
 
-        if ( mem_page & MEM_SECTOR_SIZE ) LED_GREEN = ~LED_GREEN;
+        if ( mem_page & DEFAULT_MEM_SECTOR_SIZE ) LED_GREEN = ~LED_GREEN;
 
     } while ( mem_page < mem_page_last );
 

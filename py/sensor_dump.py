@@ -90,6 +90,10 @@ def main():
     #wrl.setSrcPan(p.src_pan)
     #wrl.setSrcAddr(p.src_addr)
 
+    print('I: Resetting sensor capture board...')
+    wrl.send(p.dest_addr, 0, p.cmd_reset)
+    time.sleep(3)
+
     # Capture settings
     settings = {}
 
