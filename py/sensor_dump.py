@@ -168,6 +168,7 @@ def main():
                                             st.pack('<f', p.motor_duty_cycle))
 
         raw_input('\nQ: To start the run, please [PRESS ENTER]')
+        time.sleep(2)
         do_save_vicon_stream = True
         print('I: Requesting a sensor dump into memory...')
         wrl.send(p.dest_addr, 0, p.cmd_record_sensor_dump, \
@@ -201,7 +202,7 @@ def main():
     shelf.close()
 
     latest_symlink = root + 'latest_session.shelf'
-    if os.path.exists(latest_symlink):
+    if os.path.lexists(latest_symlink):
         os.remove(latest_symlink)
     os.symlink(datafile_shelf, latest_symlink)
 
