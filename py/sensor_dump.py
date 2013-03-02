@@ -101,7 +101,9 @@ def main():
     settings['mem_page_start']   = 0
     settings['motor_duty_cycle'] = 0
     settings['samples']          = 0
-    settings['samples_v']        = int(p.t_v * p.fs_v)
+    settings['sample_motor_on']  = 0
+    settings['sample_motor_off'] = 0
+    settings['vicon_samples']    = int(p.vicon_t * p.vicon_fs)
 
     s = utils.Bunch(settings)
 
@@ -132,11 +134,11 @@ def main():
 
     if p.do_stream_vicon:
 
-        data['sample_v_cnt'] = 0
+        data['vicon_sample_cnt'] = 0
 
-        data['ts_v']   = np.zeros((s.samples_v, 2))
-        data['pos_v']  = np.zeros((s.samples_v, 3))
-        data['qorn_v'] = np.zeros((s.samples_v, 4))
+        data['vicon_ts']   = np.zeros((s.vicon_samples, 2))
+        data['vicon_pos']  = np.zeros((s.vicon_samples, 3))
+        data['vicon_qorn'] = np.zeros((s.vicon_samples, 4))
 
     data['dump'] = []
 
@@ -186,16 +188,16 @@ def main():
 
     # Shelve session information
     datafile_shelf = datafile + '_session.shelf'
-    shelf = shelve.open(datafile_shelf)
-    not_shelved = ''
+    shelf       = shelve.open(datafile_shelf)
+    not_shelved = []
     for key in dir():
         try:
             dump = pickle.dumps(locals()[key])
             shelf[key] = locals()[key]
-        except:
-            not_shelved += ' ' + key
+        except pickle.PickleError:
+            not_shelved += [key]
     if not_shelved != '':
-        print('W:' + not_shelved + ': not shelved!')
+        print('W: Did not shelve: ' + ', '.join(not_shelved))
     shelf['p'] = globals()['p']
     shelf['s'] = globals()['s']
     shelf['d'] = globals()['d']
@@ -287,19 +289,20 @@ def vicon_callback(packet_v):
 
     global s, d, do_save_vicon_stream
 
-    cnt_v = d.sample_v_cnt
-    if p.do_stream_vicon and do_save_vicon_stream and (cnt_v < s.samples_v):
+    cnt_v = d.vicon_sample_cnt
 
-        d.ts_v[cnt_v]   = [packet_v.header.stamp.secs, \
-                           packet_v.header.stamp.nsecs]
-        d.pos_v[cnt_v]  = [packet_v.transform.translation.x, \
-                           packet_v.transform.translation.y, \
-                           packet_v.transform.translation.z]
-        d.qorn_v[cnt_v] = [packet_v.transform.rotation.w, \
-                           packet_v.transform.rotation.x, \
-                           packet_v.transform.rotation.y, \
-                           packet_v.transform.rotation.z, ]
-        d.sample_v_cnt += 1
+    if p.do_stream_vicon and do_save_vicon_stream and (cnt_v < s.vicon_samples):
+
+        d.vicon_ts[cnt_v]   = [packet_v.header.stamp.secs, \
+                               packet_v.header.stamp.nsecs]
+        d.vicon_pos[cnt_v]  = [packet_v.transform.translation.x, \
+                               packet_v.transform.translation.y, \
+                               packet_v.transform.translation.z]
+        d.vicon_qorn[cnt_v] = [packet_v.transform.rotation.w, \
+                               packet_v.transform.rotation.x, \
+                               packet_v.transform.rotation.y, \
+                               packet_v.transform.rotation.z, ]
+        d.vicon_sample_cnt += 1
 
 
 if __name__ == '__main__':
