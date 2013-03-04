@@ -97,7 +97,7 @@ def main():
     # Capture settings
     settings = {}
 
-    settings['ts']               = 0
+    settings['sampling_period']  = 0
     settings['mem_page_start']   = 0
     settings['motor_duty_cycle'] = 0
     settings['samples']          = 0
@@ -111,9 +111,9 @@ def main():
     wrl.send(p.dest_addr, 0, p.cmd_get_settings)
     time.sleep(1)
 
-    s.samples          = int(p.t * p.t_factor / s.ts)
-    s.sample_motor_on  = int(p.motor_on  * p.t * p.t_factor / s.ts)
-    s.sample_motor_off = int(p.motor_off * p.t * p.t_factor / s.ts)
+    s.samples          = int(p.t * p.t_factor / s.sampling_period)
+    s.sample_motor_on  = int(p.motor_on  * p.t * p.t_factor / s.sampling_period)
+    s.sample_motor_off = int(p.motor_off * p.t * p.t_factor / s.sampling_period)
 
     # Data
     data = {}
@@ -274,7 +274,7 @@ def received(packet):
         d.packet_cnt += 1
 
     elif ( pkt_type == p.cmd_get_settings ):
-        s.ts               = st.unpack('<H', pkt_data[:2])[0]
+        s.sampling_period  = st.unpack('<H', pkt_data[:2])[0]
         s.mem_page_start   = st.unpack('<H', pkt_data[2:4])[0]
         s.motor_duty_cycle = st.unpack('<f', pkt_data[4:])[0]
     elif ( pkt_type == p.cmd_calibrate_gyro ):
