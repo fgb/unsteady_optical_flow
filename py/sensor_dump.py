@@ -194,7 +194,7 @@ def main():
         try:
             dump = pickle.dumps(locals()[key])
             shelf[key] = locals()[key]
-        except pickle.PickleError:
+        except:
             not_shelved += [key]
     if not_shelved != '':
         print('W: Did not shelve: ' + ', '.join(not_shelved))
