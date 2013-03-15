@@ -60,6 +60,7 @@ def main():
     parser.add_argument('filename', metavar='f', type=str, nargs=1,
                             help='configuration file containing parameters')
     configfile = parser.parse_args().filename[0]
+    #configfile = '/home/fgb/Dropbox/tunnel/vicon_dump/linux.conf'
 
     # Load parameters from configuration file
     p = utils.Bunch(utils.load_config(configfile))
@@ -103,7 +104,7 @@ def main():
     settings['samples']          = 0
     settings['sample_motor_on']  = 0
     settings['sample_motor_off'] = 0
-    settings['vicon_samples']    = int(p.vicon_t * p.vicon_fs)
+    settings['vicon_samples']    = 0
 
     s = utils.Bunch(settings)
 
@@ -112,8 +113,9 @@ def main():
     time.sleep(1)
 
     s.samples          = int(p.t * p.t_factor / s.sampling_period)
-    s.sample_motor_on  = int(p.motor_on  * p.t * p.t_factor / s.sampling_period)
-    s.sample_motor_off = int(p.motor_off * p.t * p.t_factor / s.sampling_period)
+    s.sample_motor_on  = int(p.motor_on  * s.samples)
+    s.sample_motor_off = int(p.motor_off * s.samples)
+    s.vicon_samples    = int(p.t * p.vicon_percent * p.vicon_fs)
 
     # Data
     data = {}
@@ -146,14 +148,12 @@ def main():
 
     if p.do_stream_vicon:
 
-        import roslib, rospy
-        from geometry_msgs.msg import TransformStamped
-        roslib.load_manifest('vicon_bridge')
+        import rospy, geometry_msgs.msg as msg
 
-        # Subscribe to Vicon stream
         do_save_vicon_stream = False
-        rospy.init_node('sensor_dump')
-        rospy.Subscriber('/vicon/vamp/Body', TransformStamped, vicon_callback)
+        rospy.init_node(p.vicon_ros_node)
+        rospy.Subscriber(p.vicon_subject, msg.TransformStamped, vicon_callback)
+
 
     if p.do_capture_sensors:
 
