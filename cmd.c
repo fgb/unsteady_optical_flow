@@ -231,8 +231,8 @@ static void cmdRecordSensorDump (unsigned char status,
                                  unsigned char *frame)
 {
     unsigned int  samples          = frame[0] + (frame[1] << 8),
-                  sample_motor_on  = frame[1] + (frame[2] << 8),
-                  sample_motor_off = frame[3] + (frame[4] << 8),
+                  sample_motor_on  = frame[2] + (frame[3] << 8),
+                  sample_motor_off = frame[4] + (frame[5] << 8),
                   count            = 0,
                   mem_byte         = 0,
                   mem_page         = settings.mem_page_start;
