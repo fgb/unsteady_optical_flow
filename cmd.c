@@ -59,10 +59,10 @@
 
 
 /* Commands */
-#define CMD_MAX     0xFF
+#define CMD_MAX 0xFF
 
 // TODO (fgb) : Should these be part of py-generated h file?
-#define CMD_RESET                 0
+#define CMD_RESET                 2
 #define CMD_ERASE_MEMORY          3
 #define CMD_RECORD_SENSOR_DUMP    4
 #define CMD_READ_MEMORY           5
