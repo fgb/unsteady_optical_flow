@@ -92,7 +92,7 @@ def main():
     #wrl.setSrcAddr(p.src_addr)
 
     print('I: Resetting sensor capture board...')
-    wrl.send(p.dest_addr, 0, p.cmd_reset)
+    wrl.send(p.dest_addr_sd, 0, p.cmd_reset)
     time.sleep(3)
 
     # Capture settings
@@ -109,7 +109,7 @@ def main():
     s = utils.Bunch(settings)
 
     print('I: Getting capture settings...')
-    wrl.send(p.dest_addr, 0, p.cmd_get_settings)
+    wrl.send(p.dest_addr_sd, 0, p.cmd_get_settings)
     time.sleep(1)
 
     s.samples          = int(p.t * p.t_factor / s.sampling_period)
@@ -154,26 +154,78 @@ def main():
         rospy.init_node(p.vicon_ros_node)
         rospy.Subscriber(p.vicon_subject, msg.TransformStamped, vicon_callback)
 
+    if p.do_run_crawler:
+
+        from octolib import cmd
+
+        wrl.send(p.dest_addr_vr, 0, cmd.WHO_AM_I, 'Robot Echo')
+
+        ## Compute runtime, ensuring an integer amount of strides
+        #t_runtime = p.t_rollout # [s]
+        #if p.f_stride > 0.0:
+        #    t_runtime = np.ceil(p.t_rollout * p.f_stride) / p.f_stride
+
+        # Compute gains
+        motor_gains = (p.k_p, p.k_i, p.k_d, p.k_aw, p.k_ff)
+
+        # Compute velocity profile
+        cycle_setpoint_scale = p.cycle_setpoint_max/360.0
+
+        cycle_setpoint_gnd = np.around(p.setpoint_gnd      \
+                                        * cycle_setpoint_scale)
+        cycle_setpoints = np.array(2 * [ [cycle_setpoint_gnd],           \
+            [p.cycle_setpoint_max/2.0 - cycle_setpoint_gnd] ], dtype=np.int)
+        cycle_portions = np.array(2 * [ [p.interval_gnd],       \
+                                        [0.5 - p.interval_gnd] ])
+        if p.f_stride > 0.0:
+            cycle_intervals = np.array(np.around(int(1000.0/p.f_stride) \
+                                            * cycle_portions), dtype=np.int)
+            cycle_intervals[3] = int(1000.0/p.f_stride) - 1      \
+                                        - np.sum(cycle_intervals[:3])
+            cycle_vel = np.array(float(p.cycle_vel_scale) * cycle_setpoints \
+                                           / cycle_intervals, dtype=np.int)
+        else:
+            cycle_intervals = np.array(1E5 * cycle_portions, dtype=np.int)
+            cycle_vel       = np.array([[0],[0],[0],[0]])
+        cycle_vel_profile  = 2 * ( cycle_intervals.T[0].tolist() \
+                                 + cycle_setpoints.T[0].tolist() \
+                                 + cycle_vel.T[0].tolist()       )
+
+        # Set motor gains
+        wrl.send(p.dest_addr_vr, 0, cmd.SET_PID_GAINS, \
+                      st.pack('10h',*(2 * list(motor_gains))))
+
+        # Update stride velocity profile
+        wrl.send(p.dest_addr_vr, 0, cmd.SET_VEL_PROFILE, \
+                                st.pack('24H', *cycle_vel_profile))
+        print('I: Setting stride velocity profile...')
+
+        # Zero hall-effect motor counts
+        wrl.send(p.dest_addr_vr, 0, cmd.ZERO_POS, 'Zero Motor Counts')
 
     if p.do_capture_sensors:
 
         print('I: Running gyro calibration...')
-        wrl.send(p.dest_addr, 0, p.cmd_calibrate_gyro)
+        wrl.send(p.dest_addr_sd, 0, p.cmd_calibrate_gyro)
         time.sleep(2)
 
         print('I: Erasing memory contents...')
-        wrl.send(p.dest_addr, 0, p.cmd_erase_memory, st.pack('<H', s.samples))
+        wrl.send(p.dest_addr_sd, 0, p.cmd_erase_memory, st.pack('<H', s.samples))
         time.sleep(p.t * 2)
 
         print('I: Setting desired motor duty cycle...')
-        wrl.send(p.dest_addr, 0, p.cmd_set_motor_speed, \
+        wrl.send(p.dest_addr_sd, 0, p.cmd_set_motor_speed, \
                                             st.pack('<f', p.motor_duty_cycle))
 
         raw_input('\nQ: To start the run, please [PRESS ENTER]')
-        time.sleep(2)
+        if p.do_run_crawler:
+            wrl.send(p.dest_addr_vr, 0, cmd.SET_THRUST_CLOSED_LOOP, \
+                st.pack('5h',*([0, int(1000.0 * 2 * p.t)] * 2 + [0])))
+            print('I: Commanding motion...')
+        time.sleep(.5 * p.t)
         do_save_vicon_stream = True
         print('I: Requesting a sensor dump into memory...')
-        wrl.send(p.dest_addr, 0, p.cmd_record_sensor_dump, \
+        wrl.send(p.dest_addr_sd, 0, p.cmd_record_sensor_dump, \
             st.pack('<3H', s.samples, s.sample_motor_on, s.sample_motor_off))
         time.sleep(p.t + 1)
 
@@ -181,7 +233,7 @@ def main():
     raw_input('\nQ: To request a memory dump, please [PRESS ENTER]')
     do_save_vicon_stream = False
     print('I: Requesting memory contents...')
-    wrl.send(p.dest_addr, 0, p.cmd_read_memory, st.pack('<2H', s.samples, 44))
+    wrl.send(p.dest_addr_sd, 0, p.cmd_read_memory, st.pack('<2H', s.samples, 44))
     raw_input('\nQ: When data has been received, please [PRESS ENTER]')
     print('I: Received ' + str(d.sample_cnt) + ' samples (' + \
                                             str(d.packet_cnt) + ' packets)')

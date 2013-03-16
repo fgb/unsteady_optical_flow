@@ -12,7 +12,7 @@
 
 #define PAN_ID          0x1100
 #define DEST_ADDR       0x1101
-#define SRC_ADDR        0x1102
+#define SRC_ADDR        0x1103
 
 #define TXPQ_MAX_SIZE   40
 #define RXPQ_MAX_SIZE   10
