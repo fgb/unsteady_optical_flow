@@ -218,6 +218,9 @@ def main():
                                             st.pack('<f', p.motor_duty_cycle))
 
         raw_input('\nQ: To start the run, please [PRESS ENTER]')
+        if p.do_capture_optitrack:
+            raw_input('\nQ: Please turn back on optitrack recording ' + \
+                                                       '[PRESS ANY KEY]')
         if p.do_run_crawler:
             wrl.send(p.dest_addr_vr, 0, cmd.SET_THRUST_CLOSED_LOOP, \
                 st.pack('5h',*([0, int(1000.0 * 2 * p.t)] * 2 + [0])))
