@@ -368,7 +368,6 @@ if __name__ == '__main__':
         print('\nI: SystemExit: ' + str(e))
     except KeyboardInterrupt:
         print('\nI: KeyboardInterrupt')
-    # TODO (fgb) : If we're just passing on this, is it necessary at all?
     #except rospy.ROSInterruptException:
     #    pass
     except Exception as e:
